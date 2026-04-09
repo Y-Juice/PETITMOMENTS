@@ -4,22 +4,24 @@ import { StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
-
-const ACCENT = '#E54D3D';
-const TAB_BAR_BG = '#FDF8E8';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
+  const scheme = useColorScheme() ?? 'light';
+  const c = Colors[scheme];
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: ACCENT,
-        tabBarInactiveTintColor: 'rgba(229, 77, 61, 0.45)',
+        tabBarActiveTintColor: c.tint,
+        tabBarInactiveTintColor: c.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: TAB_BAR_BG,
-          borderTopColor: 'rgba(0,0,0,0.06)',
+          backgroundColor: c.tabBarBackground,
+          borderTopColor: c.tabBarBorder,
           borderTopWidth: StyleSheet.hairlineWidth,
         },
         tabBarLabelStyle: {

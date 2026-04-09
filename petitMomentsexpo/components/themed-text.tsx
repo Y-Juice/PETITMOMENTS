@@ -1,5 +1,6 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
+import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -59,6 +60,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     lineHeight: 30,
     fontSize: 16,
-    color: '#0a7ea4',
+    color: Brand.secondary,
   },
 });

@@ -4,22 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontFamily } from '@/constants/typography';
 import { MapPlaceholder } from '@/components/map-placeholder';
 import { MomentCard } from '@/components/moment-card';
+import { Brand } from '@/constants/theme';
 import { MOCK_MOMENTS } from '@/data/mockMoments';
-
-const ACCENT = '#E54D3D';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function HomeScreen() {
   const count = MOCK_MOMENTS.length;
+  const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.logoPetit}>petit</Text>
-          <Text style={styles.logoHome}>home</Text>
+          <Text style={[styles.logoPetit, { color: Brand.primary }]}>petit</Text>
+          <Text style={[styles.logoHome, { color: Brand.primary }]}>home</Text>
         </View>
 
         <MapPlaceholder />
@@ -39,7 +40,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scroll: {
     flex: 1,
@@ -56,15 +56,15 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.titleBold,
     fontSize: 32,
     lineHeight: 36,
-    color: ACCENT,
     letterSpacing: -0.5,
   },
   logoHome: {
     fontFamily: FontFamily.titleBold,
     fontSize: 32,
     lineHeight: 36,
-    color: ACCENT,
     letterSpacing: -0.5,
+    marginTop: '-2%',
+    marginLeft: '4%',
   },
   listWrap: {
     marginHorizontal: 16,

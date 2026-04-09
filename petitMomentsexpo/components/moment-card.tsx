@@ -1,6 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import type { Moment } from '@/data/mockMoments';
 
@@ -11,10 +12,14 @@ type Props = {
 };
 
 const CARD_COLORS = {
-  purple: { bg: '#8B7AB8', text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
-  coral: { bg: '#E85D4E', text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
-  yellow: { bg: '#F5D742', text: '#2C2C2C', sub: 'rgba(44,44,44,0.75)' },
-  teal: { bg: '#5A9B9A', text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
+  purple: { bg: Brand.accent, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
+  coral: { bg: Brand.primary, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
+  yellow: {
+    bg: '#F5D742',
+    text: Brand.textLight,
+    sub: 'rgba(39, 39, 39, 0.75)',
+  },
+  teal: { bg: Brand.neutral, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
 };
 
 export function MomentCard({ moment, position, onPress }: Props) {
@@ -91,7 +96,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontFamily: FontFamily.titleBold,
+    fontFamily: FontFamily.body,
     fontSize: 18,
     marginBottom: 6,
   },

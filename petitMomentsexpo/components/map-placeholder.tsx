@@ -1,9 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
-
-const ACCENT = '#E54D3D';
 
 export function MapPlaceholder() {
   return (
@@ -13,7 +12,7 @@ export function MapPlaceholder() {
           <View style={styles.gridLine} />
           <View style={[styles.gridLine, styles.gridLineH]} />
           <View style={styles.pin}>
-            <MaterialIcons name="place" size={36} color="#2563EB" />
+            <MaterialIcons name="place" size={36} color={Brand.secondary} />
           </View>
           <Text style={styles.hint}>Map komt hier</Text>
         </View>
@@ -66,8 +65,8 @@ const styles = StyleSheet.create({
   hint: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    color: ACCENT,
+    color: Brand.primary,
     fontWeight: '600',
-    opacity: 0.85,
+    opacity: 0.9,
   },
 });

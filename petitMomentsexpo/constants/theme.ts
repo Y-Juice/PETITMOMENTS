@@ -1,41 +1,54 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Brand palette (aligned with the website).
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export const Brand = {
+  primary: '#C44536',
+  secondary: '#FF5F1F',
+  accent: '#9236C4',
+  textLight: '#272727',
+  textDark: '#FFFDE2',
+  neutral: '#6B7C6E',
+} as const;
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: Brand.textLight,
+    background: '#FFFFFF',
+    tint: Brand.primary,
+    icon: Brand.neutral,
+    tabIconDefault: Brand.neutral,
+    tabIconSelected: Brand.primary,
+    secondary: Brand.secondary,
+    accent: Brand.accent,
+    neutral: Brand.neutral,
+    tabBarBackground: '#FFF8EF',
+    tabBarBorder: 'rgba(39, 39, 39, 0.08)',
+    tabBarInactive: 'rgba(196, 69, 54, 0.42)',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: Brand.textDark,
+    background: '#1E1E1C',
+    tint: Brand.secondary,
+    icon: 'rgba(255, 253, 226, 0.7)',
+    tabIconDefault: 'rgba(255, 253, 226, 0.45)',
+    tabIconSelected: Brand.secondary,
+    secondary: Brand.secondary,
+    accent: Brand.accent,
+    neutral: Brand.neutral,
+    tabBarBackground: '#2A2520',
+    tabBarBorder: 'rgba(255, 253, 226, 0.1)',
+    tabBarInactive: 'rgba(255, 95, 31, 0.45)',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
