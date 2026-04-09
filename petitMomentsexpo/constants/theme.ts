@@ -13,6 +13,28 @@ export const Brand = {
   neutral: '#6B7C6E',
 } as const;
 
+/** Home feed moment cards: accent → primary → secondary → yellow → neutral, then repeat by index. */
+export type MomentCardPalette = { bg: string; text: string; sub: string };
+
+const CARD_TEXT_ON_DARK = { text: '#FFFFFF' as const, sub: 'rgba(255,255,255,0.9)' as const };
+const CARD_TEXT_ON_YELLOW = {
+  text: Brand.textLight,
+  sub: 'rgba(39, 39, 39, 0.75)',
+} as const;
+
+export const MOMENT_CARD_COLOR_SEQUENCE: MomentCardPalette[] = [
+  { bg: Brand.accent, ...CARD_TEXT_ON_DARK },
+  { bg: Brand.primary, ...CARD_TEXT_ON_DARK },
+  { bg: '#F5D742', ...CARD_TEXT_ON_YELLOW },
+  { bg: Brand.neutral, ...CARD_TEXT_ON_DARK },
+  { bg: Brand.secondary, ...CARD_TEXT_ON_DARK },
+];
+
+export function getMomentCardColors(colorIndex: number): MomentCardPalette {
+  const n = MOMENT_CARD_COLOR_SEQUENCE.length;
+  return MOMENT_CARD_COLOR_SEQUENCE[colorIndex % n];
+}
+
 export const Colors = {
   light: {
     text: Brand.textLight,

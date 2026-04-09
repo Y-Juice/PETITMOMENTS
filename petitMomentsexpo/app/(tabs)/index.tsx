@@ -29,7 +29,9 @@ export default function HomeScreen() {
           {MOCK_MOMENTS.map((moment, index) => {
             const position =
               count === 1 ? 'single' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
-            return <MomentCard key={moment.id} moment={moment} position={position} />;
+            return (
+              <MomentCard key={moment.id} moment={moment} colorIndex={index} position={position} />
+            );
           })}
         </View>
       </ScrollView>

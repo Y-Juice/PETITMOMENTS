@@ -1,29 +1,20 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Brand } from '@/constants/theme';
+import { getMomentCardColors } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import type { Moment } from '@/data/mockMoments';
 
 type Props = {
   moment: Moment;
+  /** List index (0-based); drives red → green → blue cycling. */
+  colorIndex: number;
   position: 'first' | 'middle' | 'last' | 'single';
   onPress?: () => void;
 };
 
-const CARD_COLORS = {
-  purple: { bg: Brand.accent, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
-  coral: { bg: Brand.primary, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
-  yellow: {
-    bg: '#F5D742',
-    text: Brand.textLight,
-    sub: 'rgba(39, 39, 39, 0.75)',
-  },
-  teal: { bg: Brand.neutral, text: '#FFFFFF', sub: 'rgba(255,255,255,0.9)' },
-};
-
-export function MomentCard({ moment, position, onPress }: Props) {
-  const colors = CARD_COLORS[moment.cardVariant];
+export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
+  const colors = getMomentCardColors(colorIndex);
   const isUp = moment.scoreDirection === 'up';
   const badgeBg = '#FFFFFF';
   const arrowColor = isUp ? '#2E7D4A' : '#C62828';

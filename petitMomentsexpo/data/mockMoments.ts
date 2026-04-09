@@ -20,8 +20,6 @@ export type Moment = {
   /** Shown on home cards: net score with up (green) or down (red) badge. */
   score: number;
   scoreDirection: 'up' | 'down';
-  /** Card background on the home feed. */
-  cardVariant: 'purple' | 'coral' | 'yellow' | 'teal';
 };
 
 export const MOCK_MOMENTS: Moment[] = [
@@ -39,7 +37,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit1/800/600',
     score: 21,
     scoreDirection: 'up',
-    cardVariant: 'purple',
   },
   {
     id: '2',
@@ -55,7 +52,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit2/800/600',
     score: 34,
     scoreDirection: 'up',
-    cardVariant: 'coral',
   },
   {
     id: '3',
@@ -71,7 +67,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit3/800/600',
     score: 58,
     scoreDirection: 'down',
-    cardVariant: 'yellow',
   },
   {
     id: '4',
@@ -87,7 +82,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit4/800/600',
     score: 15,
     scoreDirection: 'down',
-    cardVariant: 'coral',
   },
   {
     id: '5',
@@ -103,7 +97,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit5/800/600',
     score: 9,
     scoreDirection: 'up',
-    cardVariant: 'teal',
   },
   {
     id: '6',
@@ -119,7 +112,6 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit6/800/600',
     score: 42,
     scoreDirection: 'up',
-    cardVariant: 'purple',
   },
   {
     id: '7',
@@ -135,6 +127,5 @@ export const MOCK_MOMENTS: Moment[] = [
     imageUrl: 'https://picsum.photos/seed/petit7/800/600',
     score: 7,
     scoreDirection: 'down',
-    cardVariant: 'yellow',
   },
 ];
