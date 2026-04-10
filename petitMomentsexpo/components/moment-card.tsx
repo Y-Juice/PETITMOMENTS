@@ -57,8 +57,11 @@ export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
+    marginTop: -40,
+    borderRadius: 15,
     paddingHorizontal: 18,
     paddingVertical: 16,
+    paddingBottom: 50,
     overflow: 'hidden',
   },
   radiusAll: {

@@ -20,7 +20,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={[styles.logoPetit, { color: Brand.primary }]}>petit</Text>
-          <Text style={[styles.logoHome, { color: Brand.primary }]}>home</Text>
+          <Text style={[styles.logoHome, { color: Brand.primary }]}>moments</Text>
         </View>
 
         <MapPlaceholder />
@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
     marginLeft: '4%',
   },
   listWrap: {
+    paddingTop: 50,
     marginHorizontal: 16,
   },
 });
