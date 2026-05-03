@@ -3,10 +3,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
 import { useAppFonts } from '@/hooks/use-app-fonts';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { supabase } from '@/utils/supabase';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +25,23 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    const toggleAuthRefresh = async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        await supabase.auth.startAutoRefresh();
+      } else {
+        await supabase.auth.stopAutoRefresh();
+      }
+    };
+
+    toggleAuthRefresh(AppState.currentState);
+    const sub = AppState.addEventListener('change', toggleAuthRefresh);
+    return () => {
+      sub.remove();
+      void supabase.auth.stopAutoRefresh();
+    };
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;
