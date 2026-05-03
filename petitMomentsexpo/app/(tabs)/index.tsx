@@ -5,11 +5,12 @@ import HomeMapPreview from '@/components/home-map-preview';
 import { FontFamily } from '@/constants/typography';
 import { MomentCard } from '@/components/moment-card';
 import { Brand } from '@/constants/theme';
-import { MOCK_MOMENTS } from '@/data/mockMoments';
+import { useMoments } from '@/contexts/moments-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function HomeScreen() {
-  const count = MOCK_MOMENTS.length;
+  const { moments } = useMoments();
+  const count = moments.length;
   const backgroundColor = useThemeColor({}, 'background');
 
   return (
@@ -26,7 +27,7 @@ export default function HomeScreen() {
         <HomeMapPreview />
 
         <View style={styles.listWrap}>
-          {MOCK_MOMENTS.map((moment, index) => {
+          {moments.map((moment, index) => {
             const position =
               count === 1 ? 'single' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
             return (

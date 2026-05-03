@@ -5,14 +5,15 @@ import type { ComponentRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { MapPlaceholder } from '@/components/map-placeholder';
-import { MOCK_MOMENTS } from '@/data/mockMoments';
+import { useMoments } from '@/contexts/moments-context';
 import { getInitialRegionForCoordinates, getMomentCoordinates } from '@/utils/moments-map-region';
 
 const PREVIEW_HEIGHT = 220;
 
 export default function HomeMapPreview() {
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
-  const coordinates = useMemo(() => getMomentCoordinates(), []);
+  const { moments } = useMoments();
+  const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
   const initialRegion = useMemo(() => getInitialRegionForCoordinates(coordinates), [coordinates]);
 
   const fitMap = useCallback(() => {
@@ -41,7 +42,7 @@ export default function HomeMapPreview() {
           rotateEnabled={false}
           pitchEnabled={false}
           toolbarEnabled={false}>
-          {MOCK_MOMENTS.map((moment) => (
+          {moments.map((moment) => (
             <Marker
               key={moment.id}
               coordinate={{

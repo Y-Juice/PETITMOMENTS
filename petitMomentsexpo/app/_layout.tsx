@@ -7,6 +7,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '@/contexts/auth-context';
+import { MomentsProvider } from '@/contexts/moments-context';
 import { useAppFonts } from '@/hooks/use-app-fonts';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/utils/supabase';
@@ -49,16 +50,18 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        {appReady ? (
-          <>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-            </Stack>
-            <StatusBar style="auto" />
-          </>
-        ) : null}
+        <MomentsProvider>
+          {appReady ? (
+            <>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+              </Stack>
+              <StatusBar style="auto" />
+            </>
+          ) : null}
+        </MomentsProvider>
       </AuthProvider>
     </ThemeProvider>
   );

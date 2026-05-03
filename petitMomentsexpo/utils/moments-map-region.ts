@@ -1,4 +1,4 @@
-import { MOCK_MOMENTS } from '@/data/mockMoments';
+import type { Moment } from '@/data/mockMoments';
 
 export const BRUSSELS_DELTA = {
   latitudeDelta: 0.035,
@@ -15,8 +15,8 @@ export type MomentsMapRegion = LatLng & {
   longitudeDelta: number;
 };
 
-export function getMomentCoordinates(): LatLng[] {
-  return MOCK_MOMENTS.map((m) => ({
+export function getMomentCoordinates(moments: Moment[]): LatLng[] {
+  return moments.map((m) => ({
     latitude: m.location.latitude,
     longitude: m.location.longitude,
   }));
