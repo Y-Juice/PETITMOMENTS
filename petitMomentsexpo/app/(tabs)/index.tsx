@@ -1,8 +1,8 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import HomeMapPreview from '@/components/home-map-preview';
 import { FontFamily } from '@/constants/typography';
-import { MapPlaceholder } from '@/components/map-placeholder';
 import { MomentCard } from '@/components/moment-card';
 import { Brand } from '@/constants/theme';
 import { MOCK_MOMENTS } from '@/data/mockMoments';
@@ -23,7 +23,7 @@ export default function HomeScreen() {
           <Text style={[styles.logoHome, { color: Brand.primary }]}>moments</Text>
         </View>
 
-        <MapPlaceholder />
+        <HomeMapPreview />
 
         <View style={styles.listWrap}>
           {MOCK_MOMENTS.map((moment, index) => {

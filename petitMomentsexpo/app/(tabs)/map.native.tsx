@@ -7,53 +7,13 @@ import { StyleSheet } from 'react-native';
 import { MapPlaceholder } from '@/components/map-placeholder';
 import { MapScreenShell } from '@/components/map-screen-shell';
 import { MOCK_MOMENTS } from '@/data/mockMoments';
-
-const BRUSSELS_DELTA = {
-  latitudeDelta: 0.035,
-  longitudeDelta: 0.035,
-};
+import { getInitialRegionForCoordinates, getMomentCoordinates } from '@/utils/moments-map-region';
 
 export default function MapScreenNative() {
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
 
-  const coordinates = useMemo(
-    () =>
-      MOCK_MOMENTS.map((m) => ({
-        latitude: m.location.latitude,
-        longitude: m.location.longitude,
-      })),
-    []
-  );
-
-  const initialRegion = useMemo(() => {
-    if (coordinates.length === 0) {
-      return {
-        latitude: 50.8503,
-        longitude: 4.3517,
-        ...BRUSSELS_DELTA,
-      };
-    }
-
-    let minLat = coordinates[0].latitude;
-    let maxLat = coordinates[0].latitude;
-    let minLng = coordinates[0].longitude;
-    let maxLng = coordinates[0].longitude;
-
-    for (const c of coordinates) {
-      minLat = Math.min(minLat, c.latitude);
-      maxLat = Math.max(maxLat, c.latitude);
-      minLng = Math.min(minLng, c.longitude);
-      maxLng = Math.max(maxLng, c.longitude);
-    }
-
-    const pad = 0.004;
-    return {
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLng + maxLng) / 2,
-      latitudeDelta: Math.max(BRUSSELS_DELTA.latitudeDelta, maxLat - minLat + pad * 4),
-      longitudeDelta: Math.max(BRUSSELS_DELTA.longitudeDelta, maxLng - minLng + pad * 4),
-    };
-  }, [coordinates]);
+  const coordinates = useMemo(() => getMomentCoordinates(), []);
+  const initialRegion = useMemo(() => getInitialRegionForCoordinates(coordinates), [coordinates]);
 
   const fitMap = useCallback(() => {
     if (coordinates.length === 0) return;
