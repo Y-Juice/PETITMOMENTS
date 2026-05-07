@@ -4,11 +4,13 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HomeMapPreview from '@/components/home-map-preview';
-import { FontFamily } from '@/constants/typography';
 import { MomentCard } from '@/components/moment-card';
+import { ThreadRow } from '@/components/thread-row';
 import { Brand } from '@/constants/theme';
+import { FontFamily } from '@/constants/typography';
 import type { Moment } from '@/data/mockMoments';
 import { useMoments } from '@/contexts/moments-context';
+import { useThreads } from '@/contexts/threads-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 type LatLng = {
@@ -40,6 +42,12 @@ function formatDistance(meters: number): string {
 
 export default function HomeScreen() {
   const { moments, loading, loadError, refreshMoments } = useMoments();
+  const {
+    threads,
+    loading: threadsLoading,
+    loadError: threadsLoadError,
+    refreshThreads,
+  } = useThreads();
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -110,6 +118,34 @@ export default function HomeScreen() {
 
         <HomeMapPreview />
 
+        {threadsLoadError ? (
+          <View style={[styles.errorBanner, { borderColor: Brand.neutral }]}>
+            <Text style={[styles.errorText, { color: textColor }]}>{threadsLoadError}</Text>
+            <Pressable style={styles.retryBtn} onPress={refreshThreads}>
+              <Text style={styles.retryBtnText}>Opnieuw laden</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <View style={styles.segment}>
+          <Text style={[styles.segmentTitle, { color: textColor }]}>Discussies</Text>
+          {threadsLoading ? (
+            <View style={styles.segmentState}>
+              <Text style={[styles.stateText, { color: muted }]}>Discussies laden...</Text>
+            </View>
+          ) : threads.length === 0 ? (
+            <View style={styles.segmentState}>
+              <Text style={[styles.stateText, { color: muted }]}>Nog geen discussies.</Text>
+            </View>
+          ) : (
+            <View style={styles.threadList}>
+              {threads.map((thread) => (
+                <ThreadRow key={thread.id} thread={thread} />
+              ))}
+            </View>
+          )}
+        </View>
+
         {loadError ? (
           <View style={[styles.errorBanner, { borderColor: Brand.neutral }]}>
             <Text style={[styles.errorText, { color: textColor }]}>{loadError}</Text>
@@ -119,28 +155,31 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {loading ? (
-          <View style={styles.stateWrap}>
-            <Text style={[styles.stateText, { color: muted }]}>Momenten laden...</Text>
-          </View>
-        ) : count === 0 ? (
-          <View style={styles.stateWrap}>
-            <Text style={[styles.stateTitle, { color: textColor }]}>Nog geen momenten</Text>
-            <Text style={[styles.stateText, { color: muted }]}>
-              Upload je eerste moment om je proximity feed op te bouwen.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.listWrap}>
-            {displayFeed.map((moment, index) => {
-              const position =
-                count === 1 ? 'single' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
-              return (
-                <MomentCard key={moment.id} moment={moment} colorIndex={index} position={position} />
-              );
-            })}
-          </View>
-        )}
+        <View style={styles.segment}>
+          <Text style={[styles.segmentTitle, { color: textColor }]}>Momenten</Text>
+          {loading ? (
+            <View style={styles.segmentState}>
+              <Text style={[styles.stateText, { color: muted }]}>Momenten laden...</Text>
+            </View>
+          ) : count === 0 ? (
+            <View style={styles.segmentState}>
+              <Text style={[styles.stateTitle, { color: textColor }]}>Nog geen momenten</Text>
+              <Text style={[styles.stateText, { color: muted }]}>
+                Upload je eerste moment om je proximity feed op te bouwen.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.listWrap}>
+              {displayFeed.map((moment, index) => {
+                const position =
+                  count === 1 ? 'single' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
+                return (
+                  <MomentCard key={moment.id} moment={moment} colorIndex={index} position={position} />
+                );
+              })}
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -177,12 +216,22 @@ const styles = StyleSheet.create({
   },
   listWrap: {
     paddingTop: 50,
-    marginHorizontal: 16,
+    marginHorizontal: 0,
   },
-  stateWrap: {
+  segment: {
     marginHorizontal: 16,
-    marginTop: 32,
-    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  segmentTitle: {
+    fontFamily: FontFamily.titleBold,
+    fontSize: 20,
+    marginBottom: 12,
+  },
+  segmentState: {
+    paddingVertical: 8,
+  },
+  threadList: {
+    paddingBottom: 8,
   },
   stateTitle: {
     fontFamily: FontFamily.titleBold,

@@ -1,34 +1,46 @@
-import * as Location from 'expo-location';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import MapView from 'react-native-maps/lib/MapView';
-import Marker from 'react-native-maps/lib/MapMarker';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ComponentRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import * as Location from "expo-location";
+import type { ComponentRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Marker from "react-native-maps/lib/MapMarker";
+import MapView from "react-native-maps/lib/MapView";
 
-import { Brand } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import { MapScreenShell } from '@/components/map-screen-shell';
-import { useMoments } from '@/contexts/moments-context';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { getInitialRegionForCoordinates, getMomentCoordinates } from '@/utils/moments-map-region';
+import { MapScreenShell } from "@/components/map-screen-shell";
+import { Brand } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import { useMoments } from "@/contexts/moments-context";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import {
+  getInitialRegionForCoordinates,
+  getMomentCoordinates,
+} from "@/utils/moments-map-region";
 
 export default function MapScreenNative() {
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
   const { moments } = useMoments();
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState('');
+  const [locationError, setLocationError] = useState("");
 
   const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
   const mapCoordinates = useMemo(() => {
     if (!userLocation) return coordinates;
     return [...coordinates, userLocation];
   }, [coordinates, userLocation]);
-  const initialRegion = useMemo(() => getInitialRegionForCoordinates(mapCoordinates), [mapCoordinates]);
-  const buttonColor = useThemeColor({ light: Brand.primary, dark: Brand.secondary }, 'tint');
-  const buttonTextColor = '#FFFFFF';
-  const muted = useThemeColor({}, 'icon');
+  const initialRegion = useMemo(
+    () => getInitialRegionForCoordinates(mapCoordinates),
+    [mapCoordinates],
+  );
+  const buttonColor = useThemeColor(
+    { light: Brand.primary, dark: Brand.secondary },
+    "tint",
+  );
+  const buttonTextColor = "#FFFFFF";
+  const muted = useThemeColor({}, "icon");
 
   const fitMap = useCallback(() => {
     if (mapCoordinates.length === 0) return;
@@ -41,10 +53,12 @@ export default function MapScreenNative() {
   const fetchUserLocation = useCallback(async () => {
     try {
       setIsLocating(true);
-      setLocationError('');
+      setLocationError("");
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        setLocationError('Geef locatie-toegang om je positie op de kaart te tonen.');
+        setLocationError(
+          "Geef locatie-toegang om je positie op de kaart te tonen.",
+        );
         return;
       }
       const current = await Location.getCurrentPositionAsync({
@@ -61,10 +75,10 @@ export default function MapScreenNative() {
           latitudeDelta: 0.015,
           longitudeDelta: 0.015,
         },
-        450
+        450,
       );
     } catch {
-      setLocationError('Kon je locatie niet ophalen. Probeer opnieuw.');
+      setLocationError("Kon je locatie niet ophalen. Probeer opnieuw.");
     } finally {
       setIsLocating(false);
     }
@@ -85,7 +99,8 @@ export default function MapScreenNative() {
           mapType="standard"
           rotateEnabled={false}
           pitchEnabled={false}
-          toolbarEnabled={false}>
+          toolbarEnabled={false}
+        >
           {moments.map((moment) => (
             <Marker
               key={moment.id}
@@ -112,14 +127,29 @@ export default function MapScreenNative() {
         <View style={styles.controls}>
           <Pressable
             onPress={() => void fetchUserLocation()}
-            style={[styles.locationButton, { backgroundColor: buttonColor }, isLocating && styles.locationButtonDisabled]}
-            disabled={isLocating}>
-            <MaterialIcons name="my-location" size={16} color={buttonTextColor} />
-            <Text style={[styles.locationButtonText, { color: buttonTextColor }]}>
-              {isLocating ? 'Locatie laden...' : 'Mijn locatie'}
+            style={[
+              styles.locationButton,
+              { backgroundColor: buttonColor },
+              isLocating && styles.locationButtonDisabled,
+            ]}
+            disabled={isLocating}
+          >
+            <MaterialIcons
+              name="my-location"
+              size={16}
+              color={buttonTextColor}
+            />
+            <Text
+              style={[styles.locationButtonText, { color: buttonTextColor }]}
+            >
+              {isLocating ? "Locatie laden..." : "Mijn locatie"}
             </Text>
           </Pressable>
-          {locationError ? <Text style={[styles.errorText, { color: muted }]}>{locationError}</Text> : null}
+          {locationError ? (
+            <Text style={[styles.errorText, { color: muted }]}>
+              {locationError}
+            </Text>
+          ) : null}
         </View>
       </View>
     </MapScreenShell>
@@ -134,7 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   controls: {
-    position: 'absolute',
+    position: "absolute",
     right: 14,
     bottom: 14,
     width: 180,
@@ -143,11 +173,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 11,
     paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     gap: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.14,
     shadowRadius: 6,
@@ -159,13 +189,13 @@ const styles = StyleSheet.create({
   locationButtonText: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   errorText: {
     marginTop: 6,
     fontFamily: FontFamily.body,
     fontSize: 12,
     lineHeight: 15,
-    textAlign: 'right',
+    textAlign: "right",
   },
 });

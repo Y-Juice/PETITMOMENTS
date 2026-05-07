@@ -1,30 +1,30 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { getMomentCardColors } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import type { Moment } from '@/data/mockMoments';
+import { getMomentCardColors } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import type { Moment } from "@/data/mockMoments";
 
 type Props = {
   moment: Moment;
   /** List index (0-based); drives red → green → blue cycling. */
   colorIndex: number;
-  position: 'first' | 'middle' | 'last' | 'single';
+  position: "first" | "middle" | "last" | "single";
   onPress?: () => void;
 };
 
 export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
   const colors = getMomentCardColors(colorIndex);
-  const isUp = moment.scoreDirection === 'up';
-  const badgeBg = '#FFFFFF';
-  const arrowColor = isUp ? '#2E7D4A' : '#C62828';
+  const isUp = moment.scoreDirection === "up";
+  const badgeBg = "#FFFFFF";
+  const arrowColor = isUp ? "#2E7D4A" : "#C62828";
 
   const radiusStyle =
-    position === 'single'
+    position === "single"
       ? styles.radiusAll
-      : position === 'first'
+      : position === "first"
         ? styles.radiusTop
-        : position === 'last'
+        : position === "last"
           ? styles.radiusBottom
           : styles.radiusNone;
 
@@ -36,10 +36,14 @@ export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
         { backgroundColor: colors.bg },
         radiusStyle,
         pressed && styles.pressed,
-      ]}>
+      ]}
+    >
       <View style={styles.row}>
         <View style={styles.textCol}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          <Text
+            style={[styles.title, { color: colors.text }]}
+            numberOfLines={2}
+          >
             {moment.title}
           </Text>
           <Text style={[styles.subtitle, { color: colors.sub }]}>
@@ -47,8 +51,14 @@ export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
           </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-          <MaterialIcons name={isUp ? 'arrow-upward' : 'arrow-downward'} size={16} color={arrowColor} />
-          <Text style={[styles.score, { color: arrowColor }]}>{moment.score}</Text>
+          <MaterialIcons
+            name={isUp ? "arrow-upward" : "arrow-downward"}
+            size={16}
+            color={arrowColor}
+          />
+          <Text style={[styles.score, { color: arrowColor }]}>
+            {moment.score}
+          </Text>
         </View>
       </View>
     </Pressable>
@@ -62,7 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 16,
     paddingBottom: 50,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   radiusAll: {
     borderRadius: 16,
@@ -80,9 +90,9 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   textCol: {
@@ -99,8 +109,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -109,6 +119,6 @@ const styles = StyleSheet.create({
   score: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
