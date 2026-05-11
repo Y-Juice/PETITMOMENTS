@@ -8,20 +8,60 @@ export type ThreadItem = {
   title: string
   body: string
   createdAt: string
+  /** Gekoppelde momenten (als de kolom moment_ids in de database bestaat). */
+  momentIds?: string[]
 }
 
 type ThreadsContextValue = {
   threads: ThreadItem[]
   loading: boolean
   loadError: string | null
-  refreshThreads: () => void
+  refreshThreads: () => Promise<void>
 }
 
 const ThreadsContext = createContext<ThreadsContextValue | undefined>(undefined)
 
+function parseMomentIds(raw: unknown): string[] | undefined {
+  if (raw == null) return undefined
+  if (Array.isArray(raw)) {
+    const ids = raw.map(String).filter(Boolean)
+    return ids.length ? ids : undefined
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed)) {
+        const ids = parsed.map(String).filter(Boolean)
+        return ids.length ? ids : undefined
+      }
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
+
+/** Supabase nested resource thread_moments(...) op threads. */
+function momentIdsFromRow(row: Record<string, unknown>): string[] | undefined {
+  const nested = row.thread_moments
+  if (Array.isArray(nested) && nested.length > 0) {
+    const items = nested as Record<string, unknown>[]
+    const sorted = [...items].sort((a, b) => {
+      const pa = Number(a.order_index ?? a.position ?? a.sort_order ?? 0)
+      const pb = Number(b.order_index ?? b.position ?? b.sort_order ?? 0)
+      return pa - pb
+    })
+    const ids = sorted
+      .map((x) => String(x.moment_id ?? x.momentId ?? '').trim())
+      .filter(Boolean)
+    if (ids.length) return ids
+  }
+  return parseMomentIds(row.moment_ids)
+}
+
 function rowToThread(row: Record<string, unknown>): ThreadItem {
   const title = String(row.title ?? '').trim() || 'Discussie'
-  const body = String(row.body ?? row.content ?? row.message ?? '').trim()
+  const body = String(row.body ?? row.content ?? row.message ?? row.description ?? '').trim()
   const createdRaw = row.created_at
   const createdAt =
     typeof createdRaw === 'string'
@@ -35,6 +75,7 @@ function rowToThread(row: Record<string, unknown>): ThreadItem {
     title,
     body,
     createdAt,
+    momentIds: momentIdsFromRow(row),
   }
 }
 
@@ -50,9 +91,20 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
 
     const selectVariants = [
+      'id, title, description, created_at, thread_moments(moment_id, order_index)',
+      'id, title, description, created_at, thread_moments(moment_id, order_index, added_by)',
+      'id, title, description, created_at, thread_moments(moment_id, position)',
+      'id, title, description, created_at, thread_moments(moment_id, sort_order)',
+      'id, title, description, created_at, thread_moments(moment_id)',
+      'id, title, description, created_at',
+      'id, title, content, created_at, moment_ids',
       'id, title, content, created_at',
+      'id, title, body, created_at, moment_ids',
       'id, title, body, created_at',
+      'id, title, message, created_at, moment_ids',
       'id, title, message, created_at',
+      'id, title, description, created_at, moment_ids',
+      'id, title, created_at, moment_ids',
       'id, title, created_at',
     ]
 
@@ -146,8 +198,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       threads,
       loading,
       loadError,
-      refreshThreads: () => {
-        void loadThreads()
+      refreshThreads: async () => {
+        await loadThreads()
       },
     }),
     [threads, loading, loadError, loadThreads]

@@ -2,29 +2,51 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Location from "expo-location";
 import type { ComponentRef } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import Marker from "react-native-maps/lib/MapMarker";
 import MapView from "react-native-maps/lib/MapView";
+import Polyline from "react-native-maps/lib/MapPolyline";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MapScreenShell } from "@/components/map-screen-shell";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useMoments } from "@/contexts/moments-context";
+import { useThreads } from "@/contexts/threads-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   getInitialRegionForCoordinates,
   getMomentCoordinates,
 } from "@/utils/moments-map-region";
+import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
+
+const SELECTED_PIN = "#2E7D4A";
+const LINE_COLOR = Brand.primary;
 
 export default function MapScreenNative() {
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
   const { moments } = useMoments();
+  const { refreshThreads } = useThreads();
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  const [composeThread, setComposeThread] = useState(false);
+  const [selectedMomentIds, setSelectedMomentIds] = useState<string[]>([]);
+  const [threadTitle, setThreadTitle] = useState("");
+  const [savingThread, setSavingThread] = useState(false);
 
   const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
   const mapCoordinates = useMemo(() => {
@@ -41,6 +63,96 @@ export default function MapScreenNative() {
   );
   const buttonTextColor = "#FFFFFF";
   const muted = useThemeColor({}, "icon");
+  const surfaceText = useThemeColor({}, "text");
+  const panelBg = useThemeColor(
+    { light: "rgba(255,255,255,0.98)", dark: "#2A2520" },
+    "background",
+  );
+  const inputBg = useThemeColor(
+    { light: "rgba(107, 124, 110, 0.08)", dark: "rgba(255,253,226,0.06)" },
+    "background",
+  );
+
+  const polylineCoordinates = useMemo(() => {
+    return selectedMomentIds
+      .map((id) => moments.find((m) => m.id === id))
+      .filter(Boolean)
+      .map((m) => ({
+        latitude: m!.location.latitude,
+        longitude: m!.location.longitude,
+      }));
+  }, [selectedMomentIds, moments]);
+
+  const exitCompose = useCallback(() => {
+    setComposeThread(false);
+    setSelectedMomentIds([]);
+    setThreadTitle("");
+  }, []);
+
+  const onToggleMomentInThread = useCallback((momentId: string) => {
+    setSelectedMomentIds((prev) =>
+      prev.includes(momentId)
+        ? prev.filter((id) => id !== momentId)
+        : [...prev, momentId],
+    );
+  }, []);
+
+  const onSaveThread = useCallback(async () => {
+    if (selectedMomentIds.length < 2) {
+      Alert.alert(
+        "Meer momenten nodig",
+        "Kies minstens twee momenten in de gewenste volgorde.",
+      );
+      return;
+    }
+
+    const orderedMoments = selectedMomentIds
+      .map((id) => moments.find((m) => m.id === id))
+      .filter(Boolean);
+    if (orderedMoments.length < 2) {
+      Alert.alert("Ongeldige selectie", "Deze momenten zijn niet meer beschikbaar.");
+      return;
+    }
+
+    const contentSummary = orderedMoments.map((m) => m!.title).join(" → ");
+
+    setSavingThread(true);
+    try {
+      const { error } = await insertThreadFromMapInSupabase({
+        title: threadTitle,
+        orderedMomentIds: selectedMomentIds,
+        contentSummary,
+      });
+      if (error) {
+        Alert.alert("Opslaan mislukt", error);
+        return;
+      }
+      await refreshThreads();
+      Alert.alert("Opgeslagen", "Je thread staat bij Discussies op de homepagina.");
+      exitCompose();
+    } finally {
+      setSavingThread(false);
+    }
+  }, [
+    selectedMomentIds,
+    moments,
+    threadTitle,
+    refreshThreads,
+    exitCompose,
+  ]);
+
+  const startCompose = useCallback(() => {
+    if (moments.length < 2) {
+      Alert.alert(
+        "Niet genoeg momenten",
+        "Er moeten minstens twee momenten op de kaart staan om een thread te maken.",
+      );
+      return;
+    }
+    setComposeThread(true);
+    setSelectedMomentIds([]);
+    setThreadTitle("");
+  }, [moments.length]);
 
   const fitMap = useCallback(() => {
     if (mapCoordinates.length === 0) return;
@@ -88,8 +200,14 @@ export default function MapScreenNative() {
     void fetchUserLocation();
   }, [fetchUserLocation]);
 
+  const shellNote = composeThread
+    ? "Thread modus: tik op pins in volgorde. Tik opnieuw om een moment uit de route te halen."
+    : undefined;
+
+  const composerBottom = insets.bottom + 72;
+
   return (
-    <MapScreenShell>
+    <MapScreenShell noteBelowTitle={shellNote}>
       <View style={styles.root}>
         <MapView
           ref={mapRef}
@@ -101,18 +219,39 @@ export default function MapScreenNative() {
           pitchEnabled={false}
           toolbarEnabled={false}
         >
-          {moments.map((moment) => (
-            <Marker
-              key={moment.id}
-              coordinate={{
-                latitude: moment.location.latitude,
-                longitude: moment.location.longitude,
-              }}
-              title={moment.title}
-              description={`${moment.username} · ${moment.location.label}`}
-              tracksViewChanges={false}
-            />
-          ))}
+          {moments.map((moment) => {
+            const selected = selectedMomentIds.includes(moment.id);
+            return (
+              <Marker
+                key={
+                  composeThread
+                    ? `${moment.id}-${selected ? "in" : "out"}`
+                    : moment.id
+                }
+                coordinate={{
+                  latitude: moment.location.latitude,
+                  longitude: moment.location.longitude,
+                }}
+                title={moment.title}
+                description={
+                  composeThread
+                    ? selected
+                      ? `In route (${selectedMomentIds.indexOf(moment.id) + 1})`
+                      : "Tik om toe te voegen"
+                    : `${moment.username} · ${moment.location.label}`
+                }
+                pinColor={
+                  composeThread ? (selected ? SELECTED_PIN : Brand.primary) : undefined
+                }
+                tracksViewChanges={false}
+                onPress={
+                  composeThread
+                    ? () => onToggleMomentInThread(moment.id)
+                    : undefined
+                }
+              />
+            );
+          })}
           {userLocation ? (
             <Marker
               coordinate={userLocation}
@@ -122,9 +261,103 @@ export default function MapScreenNative() {
               tracksViewChanges={false}
             />
           ) : null}
+          {composeThread && polylineCoordinates.length >= 2 ? (
+            <Polyline
+              coordinates={polylineCoordinates}
+              strokeColor={LINE_COLOR}
+              strokeWidth={3}
+            />
+          ) : null}
         </MapView>
 
+        {composeThread ? (
+          <View
+            style={[
+              styles.threadComposer,
+              {
+                backgroundColor: panelBg,
+                bottom: composerBottom,
+              },
+            ]}
+          >
+            <Text style={[styles.composerHint, { color: muted }]}>
+              Minimaal 2 momenten. Volgorde:{" "}
+              <Text style={{ fontWeight: "700", color: surfaceText }}>
+                {selectedMomentIds.length}
+              </Text>
+            </Text>
+            <TextInput
+              value={threadTitle}
+              onChangeText={setThreadTitle}
+              placeholder="Titel (optioneel)"
+              placeholderTextColor={muted}
+              style={[
+                styles.titleInput,
+                { color: surfaceText, backgroundColor: inputBg },
+              ]}
+              editable={!savingThread}
+            />
+            <View style={styles.composerActions}>
+              <Pressable
+                onPress={exitCompose}
+                disabled={savingThread}
+                style={({ pressed }) => [
+                  styles.secondaryBtn,
+                  { borderColor: Brand.neutral },
+                  pressed && styles.pressedBtn,
+                  savingThread && styles.disabledBtn,
+                ]}
+              >
+                <Text style={[styles.secondaryBtnText, { color: surfaceText }]}>
+                  Annuleren
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => void onSaveThread()}
+                disabled={savingThread || selectedMomentIds.length < 2}
+                style={({ pressed }) => [
+                  styles.primaryBtn,
+                  { backgroundColor: buttonColor },
+                  pressed && styles.pressedBtn,
+                  (savingThread || selectedMomentIds.length < 2) &&
+                    styles.disabledBtn,
+                ]}
+              >
+                {savingThread ? (
+                  <ActivityIndicator color={buttonTextColor} />
+                ) : (
+                  <Text style={[styles.primaryBtnText, { color: buttonTextColor }]}>
+                    Opslaan
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.controls}>
+          <Pressable
+            onPress={composeThread ? exitCompose : startCompose}
+            style={({ pressed }) => [
+              styles.threadModeButton,
+              {
+                backgroundColor: composeThread ? Brand.neutral : buttonColor,
+              },
+              pressed && styles.pressedBtn,
+              moments.length < 2 && !composeThread && styles.disabledBtn,
+            ]}
+            disabled={!composeThread && moments.length < 2}
+          >
+            <MaterialIcons
+              name={composeThread ? "close" : "timeline"}
+              size={18}
+              color={buttonTextColor}
+            />
+            <Text style={[styles.locationButtonText, { color: buttonTextColor }]}>
+              {composeThread ? "Stop thread" : "Thread maken"}
+            </Text>
+          </Pressable>
+
           <Pressable
             onPress={() => void fetchUserLocation()}
             style={[
@@ -139,16 +372,12 @@ export default function MapScreenNative() {
               size={16}
               color={buttonTextColor}
             />
-            <Text
-              style={[styles.locationButtonText, { color: buttonTextColor }]}
-            >
+            <Text style={[styles.locationButtonText, { color: buttonTextColor }]}>
               {isLocating ? "Locatie laden..." : "Mijn locatie"}
             </Text>
           </Pressable>
           {locationError ? (
-            <Text style={[styles.errorText, { color: muted }]}>
-              {locationError}
-            </Text>
+            <Text style={[styles.errorText, { color: muted }]}>{locationError}</Text>
           ) : null}
         </View>
       </View>
@@ -167,7 +396,22 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 14,
     bottom: 14,
-    width: 180,
+    width: 188,
+    gap: 10,
+  },
+  threadModeButton: {
+    borderRadius: 999,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
+    elevation: 3,
   },
   locationButton: {
     borderRadius: 999,
@@ -197,5 +441,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 15,
     textAlign: "right",
+  },
+  threadComposer: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(107, 124, 110, 0.35)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  composerHint: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  titleInput: {
+    fontFamily: FontFamily.body,
+    fontSize: 16,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  composerActions: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  secondaryBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  secondaryBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  primaryBtn: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  primaryBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  pressedBtn: {
+    opacity: 0.88,
+  },
+  disabledBtn: {
+    opacity: 0.55,
   },
 });

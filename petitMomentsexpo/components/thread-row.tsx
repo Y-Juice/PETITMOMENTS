@@ -19,6 +19,11 @@ export function ThreadRow({ thread }: Props) {
       <Text style={[styles.title, { color: textColor }]} numberOfLines={2}>
         {thread.title}
       </Text>
+      {thread.momentIds?.length ? (
+        <Text style={[styles.meta, { color: muted }]}>
+          Route: {thread.momentIds.length} momenten
+        </Text>
+      ) : null}
       {preview ? (
         <Text style={[styles.body, { color: muted }]} numberOfLines={3}>
           {preview}
@@ -41,6 +46,11 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FontFamily.titleBold,
     fontSize: 16,
+    marginBottom: 6,
+  },
+  meta: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
     marginBottom: 6,
   },
   body: {
