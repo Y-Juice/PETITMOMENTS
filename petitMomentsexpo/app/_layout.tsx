@@ -7,6 +7,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '@/contexts/auth-context';
+import { MomentDetailOverlayProvider } from '@/contexts/moment-detail-overlay-context';
 import { MomentsProvider } from '@/contexts/moments-context';
 import { ThreadsProvider } from '@/contexts/threads-context';
 import { useAppFonts } from '@/hooks/use-app-fonts';
@@ -52,18 +53,20 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <MomentsProvider>
-          <ThreadsProvider>
-            {appReady ? (
-              <>
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-                </Stack>
-                <StatusBar style="auto" />
-              </>
-            ) : null}
-          </ThreadsProvider>
+          <MomentDetailOverlayProvider>
+            <ThreadsProvider>
+              {appReady ? (
+                <>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+                  </Stack>
+                  <StatusBar style="auto" />
+                </>
+              ) : null}
+            </ThreadsProvider>
+          </MomentDetailOverlayProvider>
         </MomentsProvider>
       </AuthProvider>
     </ThemeProvider>

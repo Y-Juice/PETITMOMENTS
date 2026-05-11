@@ -8,9 +8,10 @@ import { MomentCard } from '@/components/moment-card';
 import { ThreadRow } from '@/components/thread-row';
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
-import type { Moment } from '@/data/mockMoments';
+import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
 import { useMoments } from '@/contexts/moments-context';
 import { useThreads } from '@/contexts/threads-context';
+import type { Moment } from '@/data/mockMoments';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 type LatLng = {
@@ -41,6 +42,7 @@ function formatDistance(meters: number): string {
 }
 
 export default function HomeScreen() {
+  const { presentMomentById } = useMomentDetailOverlay();
   const { moments, loading, loadError, refreshMoments } = useMoments();
   const {
     threads,
@@ -174,7 +176,13 @@ export default function HomeScreen() {
                 const position =
                   count === 1 ? 'single' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
                 return (
-                  <MomentCard key={moment.id} moment={moment} colorIndex={index} position={position} />
+                  <MomentCard
+                    key={moment.id}
+                    moment={moment}
+                    colorIndex={index}
+                    position={position}
+                    onPress={() => presentMomentById(moment.id)}
+                  />
                 );
               })}
             </View>

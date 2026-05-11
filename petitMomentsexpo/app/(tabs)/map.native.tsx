@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapScreenShell } from "@/components/map-screen-shell";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
+import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
 import { useMoments } from "@/contexts/moments-context";
 import { useThreads } from "@/contexts/threads-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -32,6 +33,7 @@ const SELECTED_PIN = "#2E7D4A";
 const LINE_COLOR = Brand.primary;
 
 export default function MapScreenNative() {
+  const { presentMomentById } = useMomentDetailOverlay();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
   const { moments } = useMoments();
@@ -247,7 +249,7 @@ export default function MapScreenNative() {
                 onPress={
                   composeThread
                     ? () => onToggleMomentInThread(moment.id)
-                    : undefined
+                    : () => presentMomentById(moment.id)
                 }
               />
             );

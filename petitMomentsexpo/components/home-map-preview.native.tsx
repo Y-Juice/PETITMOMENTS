@@ -5,12 +5,14 @@ import type { ComponentRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { MapPlaceholder } from '@/components/map-placeholder';
+import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
 import { useMoments } from '@/contexts/moments-context';
 import { getInitialRegionForCoordinates, getMomentCoordinates } from '@/utils/moments-map-region';
 
 const PREVIEW_HEIGHT = 220;
 
 export default function HomeMapPreview() {
+  const { presentMomentById } = useMomentDetailOverlay();
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
   const { moments } = useMoments();
   const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
@@ -52,6 +54,7 @@ export default function HomeMapPreview() {
               title={moment.title}
               description={`${moment.username} · ${moment.location.label}`}
               tracksViewChanges={false}
+              onPress={() => presentMomentById(moment.id)}
             />
           ))}
         </MapView>
