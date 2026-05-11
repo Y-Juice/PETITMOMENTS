@@ -111,7 +111,7 @@ export default function LoginScreen() {
           </Pressable>
 
           <View style={styles.footerRow}>
-            <Text style={[styles.footerText, { color: muted }]}>Nog geen account?</Text>{' '}
+            <Text style={[styles.footerText, { color: muted }]}>Nog geen account? </Text>
             <Link href="/register">
               <Text style={[styles.link, { color: tint }]}>Registreren</Text>
             </Link>

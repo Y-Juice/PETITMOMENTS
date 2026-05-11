@@ -1,4 +1,5 @@
-import type { Session } from '@supabase/supabase-js'
+import type { AuthError, Session } from '@supabase/supabase-js'
+import * as Linking from 'expo-linking'
 import React, {
   createContext,
   useCallback,
@@ -9,6 +10,39 @@ import React, {
 } from 'react'
 
 import { supabase } from '@/utils/supabase'
+
+function formatSignUpError(error: AuthError): string {
+  const raw = error.message ?? ''
+  const lower = raw.toLowerCase()
+
+  if (lower.includes('database error saving new user')) {
+    return (
+      'Account aanmaken mislukt in de database. Vaak blokkeert een trigger bij nieuwe gebruikers (bijv. insert op de tabel profiles). ' +
+      'Controleer in Supabase de logs voor Auth en Postgres.'
+    )
+  }
+
+  if (error.code === 'weak_password') {
+    const reasons =
+      'reasons' in error &&
+      Array.isArray((error as { reasons?: unknown }).reasons)
+        ? (error as { reasons: string[] }).reasons.join(', ')
+        : ''
+    return reasons
+      ? `Wachtwoord wordt afgekeurd door het Supabase beleid (${reasons}).`
+      : 'Wachtwoord wordt afgekeurd door het Supabase beleid.'
+  }
+
+  if (lower.includes('captcha')) {
+    return 'Registratie vereist captcha: schakel captcha bescherming uit in Auth-instellingen, of werk de flow bij om een captcha-token mee te sturen.'
+  }
+
+  if (lower.includes('signup') && lower.includes('not')) {
+    return 'Registratie is uitgeschakeld voor dit Supabase-project. Controleer Authentication → Providers.'
+  }
+
+  return raw || 'Kon geen account aanmaken.'
+}
 
 type AuthContextValue = {
   session: Session | null
@@ -57,13 +91,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
     const trimmed = email.trim()
+    const emailRedirectTo = Linking.createURL('/')
+
     const { data, error } = await supabase.auth.signUp({
       email: trimmed,
       password,
+      options: { emailRedirectTo },
     })
-    if (error) return { error: error.message ?? 'Could not register' }
-    // When email confirmations are enabled, session exists only after verify.
-    if (!data.session) return { error: null, needsConfirmation: true }
+
+    if (error) return { error: formatSignUpError(error) }
+
+    const user = data?.user
+    const nextSession = data?.session ?? null
+
+    /* Duplicate e-mail wordt soms niet als error gerapporteerd: user zonder identities, geen session. */
+    if (
+      !nextSession &&
+      user &&
+      Array.isArray(user.identities) &&
+      user.identities.length === 0
+    ) {
+      return {
+        error:
+          "Dit e-mailadres is mogelijk al in gebruik. Probeer 'Inloggen' of gebruik een ander adres.",
+      }
+    }
+
+    // Bij e-mailbevestiging: pas sessie nadat gebruiker via link heeft bevestigd.
+    if (!nextSession) return { error: null, needsConfirmation: true }
+
     return { error: null, needsConfirmation: false }
   }, [])
 

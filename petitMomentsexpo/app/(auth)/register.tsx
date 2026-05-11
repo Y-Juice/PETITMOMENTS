@@ -120,7 +120,7 @@ export default function RegisterScreen() {
           </Pressable>
 
           <View style={styles.footerRow}>
-            <Text style={[styles.footerText, { color: muted }]}>Al een account?</Text>{' '}
+            <Text style={[styles.footerText, { color: muted }]}>Al een account? </Text>
             <Link href="/login">
               <Text style={[styles.link, { color: tint }]}>Inloggen</Text>
             </Link>
