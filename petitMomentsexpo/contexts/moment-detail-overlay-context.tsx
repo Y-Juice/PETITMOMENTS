@@ -24,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FontFamily } from '@/constants/typography';
 import { useMoments } from '@/contexts/moments-context';
+import { useSaves } from '@/contexts/saves-context';
 
 const CARD_BG = '#C84E3D';
 const BADGE_FG = '#1A1A1A';
@@ -44,9 +45,11 @@ export function MomentDetailOverlayProvider({
   children: React.ReactNode;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [savingToggle, setSavingToggle] = useState(false);
   const visible = openId !== null;
 
   const { moments, loading } = useMoments();
+  const { isMomentSaved, toggleMomentSave } = useSaves();
 
   const moment = useMemo(() => {
     if (!openId) return undefined;
@@ -82,6 +85,14 @@ export function MomentDetailOverlayProvider({
   );
 
   const isUp = moment?.scoreDirection === 'up';
+  const saved = moment ? isMomentSaved(moment.id) : false;
+
+  const onToggleSave = useCallback(async () => {
+    if (!moment || savingToggle) return;
+    setSavingToggle(true);
+    await toggleMomentSave(moment.id);
+    setSavingToggle(false);
+  }, [moment, savingToggle, toggleMomentSave]);
 
   return (
     <MomentDetailOverlayContext.Provider value={value}>
@@ -176,6 +187,37 @@ export function MomentDetailOverlayProvider({
                       )}
 
                       <Text style={styles.description}>{moment.description}</Text>
+
+                      <Pressable
+                        onPress={() => void onToggleSave()}
+                        disabled={savingToggle}
+                        style={({ pressed }) => [
+                          styles.saveBtn,
+                          saved && styles.saveBtnActive,
+                          pressed && styles.saveBtnPressed,
+                          savingToggle && styles.saveBtnDisabled,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: saved }}
+                        accessibilityLabel={
+                          saved ? 'Verwijder uit opgeslagen momenten' : 'Bewaar dit moment'
+                        }>
+                        {savingToggle ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <MaterialIcons
+                              name={saved ? 'bookmark' : 'bookmark-border'}
+                              size={20}
+                              color="#FFFFFF"
+                            />
+                            <Text style={styles.saveBtnText}>
+                              {saved ? 'Bewaard' : 'Bewaar'}
+                            </Text>
+                          </>
+                        )}
+                      </Pressable>
+
                       <Text style={styles.footer}>
                         {moment.username}, {moment.location.label}
                       </Text>
@@ -338,7 +380,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 25,
     color: '#FFFFFF',
-    marginBottom: 24,
+    marginBottom: 18,
+  },
+  saveBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(255,255,255,0.0)',
+    marginBottom: 18,
+    minHeight: 40,
+  },
+  saveBtnActive: {
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderColor: '#FFFFFF',
+  },
+  saveBtnPressed: {
+    opacity: 0.82,
+  },
+  saveBtnDisabled: {
+    opacity: 0.7,
+  },
+  saveBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   footer: {
     fontFamily: FontFamily.body,

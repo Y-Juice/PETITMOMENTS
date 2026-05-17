@@ -15,6 +15,8 @@ import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
 import { useMoments } from '@/contexts/moments-context';
+import { useSaves } from '@/contexts/saves-context';
+import { useThreads, type ThreadItem } from '@/contexts/threads-context';
 import type { Moment } from '@/data/mockMoments';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -30,9 +32,19 @@ const TABS: { key: TabKey; label: string }[] = [
 export default function ProfileScreen() {
   const { session, signOut } = useAuth();
   const { moments, updateMoment, deleteMoment } = useMoments();
+  const { threads } = useThreads();
+  const {
+    savedMomentIds,
+    savedThreadIds,
+    loading: savesLoading,
+    loadError: savesError,
+    toggleMomentSave,
+    toggleThreadSave,
+  } = useSaves();
   const [signingOut, setSigningOut] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('created');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [unsaveBusyId, setUnsaveBusyId] = useState<string | null>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -55,6 +67,15 @@ export default function ProfileScreen() {
     return moments.filter((m) => m.ownerId === currentUserId);
   }, [moments, currentUserId]);
 
+  const savedMoments = useMemo<Moment[]>(
+    () => moments.filter((m) => savedMomentIds.has(m.id)),
+    [moments, savedMomentIds],
+  );
+  const savedThreads = useMemo<ThreadItem[]>(
+    () => threads.filter((t) => savedThreadIds.has(t.id)),
+    [threads, savedThreadIds],
+  );
+
   const onSignOut = useCallback(async () => {
     setSigningOut(true);
     await signOut();
@@ -73,6 +94,28 @@ export default function ProfileScreen() {
       }
     },
     [busyId, updateMoment],
+  );
+
+  const onUnsaveMoment = useCallback(
+    async (momentId: string) => {
+      if (unsaveBusyId) return;
+      setUnsaveBusyId(momentId);
+      const { error } = await toggleMomentSave(momentId);
+      setUnsaveBusyId(null);
+      if (error) Alert.alert('Bijwerken mislukt', error);
+    },
+    [toggleMomentSave, unsaveBusyId],
+  );
+
+  const onUnsaveThread = useCallback(
+    async (threadId: string) => {
+      if (unsaveBusyId) return;
+      setUnsaveBusyId(threadId);
+      const { error } = await toggleThreadSave(threadId);
+      setUnsaveBusyId(null);
+      if (error) Alert.alert('Bijwerken mislukt', error);
+    },
+    [toggleThreadSave, unsaveBusyId],
   );
 
   const onDelete = useCallback(
@@ -199,6 +242,160 @@ export default function ProfileScreen() {
     );
   };
 
+  const renderSavedTab = () => {
+    if (!currentUserId) {
+      return (
+        <Text style={[styles.emptyText, { color: muted }]}>
+          Log in om je opgeslagen items te zien.
+        </Text>
+      );
+    }
+    if (savesLoading) {
+      return (
+        <View style={styles.savedLoading}>
+          <ActivityIndicator color={tint} />
+        </View>
+      );
+    }
+    if (savedMoments.length === 0 && savedThreads.length === 0) {
+      return (
+        <Text style={[styles.emptyText, { color: muted }]}>
+          Je hebt nog niets opgeslagen. Tik op het bladwijzer-icoon op een
+          moment of discussie om het hier te bewaren.
+        </Text>
+      );
+    }
+    return (
+      <View style={styles.savedSections}>
+        {savesError ? (
+          <Text style={[styles.errorText, { color: Brand.primary }]}>
+            {savesError}
+          </Text>
+        ) : null}
+
+        <Text style={[styles.sectionLabel, { color: textColor }]}>
+          Opgeslagen momenten
+        </Text>
+        {savedMoments.length === 0 ? (
+          <Text style={[styles.emptyText, { color: muted }]}>
+            Nog geen momenten bewaard.
+          </Text>
+        ) : (
+          <View style={styles.list}>
+            {savedMoments.map((moment) => {
+              const isBusy = unsaveBusyId === moment.id;
+              return (
+                <View
+                  key={moment.id}
+                  style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                  {moment.imageUrl ? (
+                    <Image
+                      source={{ uri: moment.imageUrl }}
+                      style={styles.cardImage}
+                      contentFit="cover"
+                    />
+                  ) : null}
+                  <View style={styles.cardBody}>
+                    <Text
+                      style={[styles.cardTitle, { color: textColor }]}
+                      numberOfLines={2}>
+                      {moment.title}
+                    </Text>
+                    <Text
+                      style={[styles.cardMeta, { color: muted }]}
+                      numberOfLines={1}>
+                      {moment.username}, {moment.location.label}
+                    </Text>
+                    <Pressable
+                      style={[
+                        styles.actionBtn,
+                        styles.unsaveBtn,
+                        isBusy && styles.actionBtnDisabled,
+                      ]}
+                      disabled={isBusy}
+                      onPress={() => void onUnsaveMoment(moment.id)}>
+                      {isBusy ? (
+                        <ActivityIndicator size="small" color={Brand.primary} />
+                      ) : (
+                        <Text
+                          style={[styles.actionBtnText, styles.unsaveBtnText]}>
+                          Verwijder uit opgeslagen
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        <Text style={[styles.sectionLabel, { color: textColor }]}>
+          Opgeslagen discussies
+        </Text>
+        {savedThreads.length === 0 ? (
+          <Text style={[styles.emptyText, { color: muted }]}>
+            Nog geen discussies bewaard.
+          </Text>
+        ) : (
+          <View style={styles.list}>
+            {savedThreads.map((thread) => {
+              const isBusy = unsaveBusyId === thread.id;
+              const preview =
+                thread.body.length > 140
+                  ? `${thread.body.slice(0, 137).trimEnd()}...`
+                  : thread.body;
+              return (
+                <View
+                  key={thread.id}
+                  style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                  <View style={styles.cardBody}>
+                    <Text
+                      style={[styles.cardTitle, { color: textColor }]}
+                      numberOfLines={2}>
+                      {thread.title}
+                    </Text>
+                    {thread.momentIds?.length ? (
+                      <Text
+                        style={[styles.cardMeta, { color: muted }]}
+                        numberOfLines={1}>
+                        Route: {thread.momentIds.length} momenten
+                      </Text>
+                    ) : null}
+                    {preview ? (
+                      <Text
+                        style={[styles.threadPreview, { color: muted }]}
+                        numberOfLines={3}>
+                        {preview}
+                      </Text>
+                    ) : null}
+                    <Pressable
+                      style={[
+                        styles.actionBtn,
+                        styles.unsaveBtn,
+                        isBusy && styles.actionBtnDisabled,
+                      ]}
+                      disabled={isBusy}
+                      onPress={() => void onUnsaveThread(thread.id)}>
+                      {isBusy ? (
+                        <ActivityIndicator size="small" color={Brand.primary} />
+                      ) : (
+                        <Text
+                          style={[styles.actionBtnText, styles.unsaveBtnText]}>
+                          Verwijder uit opgeslagen
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const renderPlaceholderTab = (label: string) => (
     <View style={styles.placeholderBox}>
       <Text style={[styles.placeholderTitle, { color: textColor }]}>
@@ -212,7 +409,7 @@ export default function ProfileScreen() {
 
   let tabContent: React.ReactNode = null;
   if (activeTab === 'created') tabContent = renderCreatedTab();
-  else if (activeTab === 'saved') tabContent = renderPlaceholderTab('opgeslagen momenten');
+  else if (activeTab === 'saved') tabContent = renderSavedTab();
   else if (activeTab === 'upvoted') tabContent = renderPlaceholderTab('upvotes');
   else if (activeTab === 'downvoted') tabContent = renderPlaceholderTab('downvotes');
 
@@ -416,5 +613,38 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 14,
     lineHeight: 20,
+  },
+  savedSections: {
+    gap: 8,
+  },
+  sectionLabel: {
+    fontFamily: FontFamily.titleBold,
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  savedLoading: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  unsaveBtn: {
+    borderColor: Brand.primary,
+    backgroundColor: 'rgba(196, 69, 54, 0.08)',
+    marginTop: 4,
+  },
+  unsaveBtnText: {
+    color: Brand.primary,
+  },
+  threadPreview: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 10,
   },
 });

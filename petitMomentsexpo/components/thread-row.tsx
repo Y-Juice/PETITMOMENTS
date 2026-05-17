@@ -1,6 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { useState } from 'react'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import type { ThreadItem } from '@/contexts/threads-context'
+import { useSaves } from '@/contexts/saves-context'
+import { Brand } from '@/constants/theme'
 import { FontFamily } from '@/constants/typography'
 import { useThemeColor } from '@/hooks/use-theme-color'
 
@@ -11,14 +15,52 @@ type Props = {
 export function ThreadRow({ thread }: Props) {
   const textColor = useThemeColor({}, 'text')
   const muted = useThemeColor({}, 'icon')
+  const { isThreadSaved, toggleThreadSave } = useSaves()
+  const [busy, setBusy] = useState(false)
+  const saved = isThreadSaved(thread.id)
+
   const preview =
     thread.body.length > 140 ? `${thread.body.slice(0, 137).trimEnd()}...` : thread.body
 
+  const onPressSave = async () => {
+    if (busy) return
+    setBusy(true)
+    await toggleThreadSave(thread.id)
+    setBusy(false)
+  }
+
   return (
     <View style={styles.wrap}>
-      <Text style={[styles.title, { color: textColor }]} numberOfLines={2}>
-        {thread.title}
-      </Text>
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: textColor }]} numberOfLines={2}>
+          {thread.title}
+        </Text>
+        <Pressable
+          onPress={() => void onPressSave()}
+          disabled={busy}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            saved && styles.saveBtnActive,
+            pressed && styles.saveBtnPressed,
+            busy && styles.saveBtnDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: saved }}
+          accessibilityLabel={
+            saved ? 'Verwijder uit opgeslagen discussies' : 'Bewaar deze discussie'
+          }>
+          {busy ? (
+            <ActivityIndicator size="small" color={saved ? '#FFFFFF' : Brand.primary} />
+          ) : (
+            <MaterialIcons
+              name={saved ? 'bookmark' : 'bookmark-border'}
+              size={20}
+              color={saved ? '#FFFFFF' : Brand.primary}
+            />
+          )}
+        </Pressable>
+      </View>
+
       {thread.momentIds?.length ? (
         <Text style={[styles.meta, { color: muted }]}>
           Route: {thread.momentIds.length} momenten
@@ -43,10 +85,36 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: 'rgba(107, 124, 110, 0.06)',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 6,
+  },
   title: {
+    flex: 1,
     fontFamily: FontFamily.titleBold,
     fontSize: 16,
-    marginBottom: 6,
+  },
+  saveBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Brand.primary,
+    backgroundColor: 'transparent',
+  },
+  saveBtnActive: {
+    backgroundColor: Brand.primary,
+    borderColor: Brand.primary,
+  },
+  saveBtnPressed: {
+    opacity: 0.85,
+  },
+  saveBtnDisabled: {
+    opacity: 0.7,
   },
   meta: {
     fontFamily: FontFamily.body,
