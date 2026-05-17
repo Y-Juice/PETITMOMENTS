@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AuthOrDivider,
   AuthWelcomeLine,
-  GoogleSignInButton,
   GradientOutlineButton,
   GradientPrimaryButton,
   PetitMomentLogoBlock,
@@ -30,7 +29,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 const MIN_PASSWORD = 6;
 
 export default function LoginScreen() {
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
@@ -44,7 +43,6 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
@@ -68,18 +66,6 @@ export default function LoginScreen() {
     setSubmitting(false);
     if (error) setFormError(error);
   }, [email, password, signInWithEmail, termsAccepted]);
-
-  const onGoogle = useCallback(async () => {
-    if (!termsAccepted) {
-      setFormError('Accepteer eerst de algemene voorwaarden.');
-      return;
-    }
-    setFormError(null);
-    setGoogleLoading(true);
-    const { error } = await signInWithGoogle();
-    setGoogleLoading(false);
-    if (error) setFormError(error);
-  }, [signInWithGoogle, termsAccepted]);
 
   const inputExtras = Platform.select({
     ios: {
@@ -160,7 +146,7 @@ export default function LoginScreen() {
             label={submitting ? 'Bezig…' : 'Inloggen'}
             onPress={() => void handleSubmit()}
             loading={submitting}
-            disabled={submitting || googleLoading}
+            disabled={submitting}
           />
 
           <AuthOrDivider />
@@ -171,16 +157,6 @@ export default function LoginScreen() {
               href="/register"
               textColor={Brand.primary}
               fillColor={backgroundColor}
-            />
-          </View>
-
-          <View style={styles.gap}>
-            <GoogleSignInButton
-              onPress={() => void onGoogle()}
-              disabled={submitting}
-              loading={googleLoading}
-              fillColor={backgroundColor}
-              gColor={Brand.primary}
             />
           </View>
         </ScrollView>

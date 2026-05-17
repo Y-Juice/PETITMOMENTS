@@ -22,12 +22,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+/* Op web laten we supabase-js zijn standaard localStorage gebruiken. */
+const authStorage = Platform.OS === 'web' ? undefined : AsyncStorage
+
 export const supabase = createClient(
   supabaseUrl,
   supabaseAnonKey,
   {
     auth: {
-      storage: AsyncStorage,
+      storage: authStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: Platform.OS === 'web',

@@ -167,45 +167,6 @@ export function GradientOutlineButton({
   );
 }
 
-type GoogleSignInButtonProps = {
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  fillColor: string;
-  gColor: string;
-};
-
-export function GoogleSignInButton({
-  onPress,
-  disabled,
-  loading,
-  fillColor,
-  gColor,
-}: GoogleSignInButtonProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={({ pressed }) => [pressed && styles.btnPressed, disabled && styles.btnMuted]}
-    >
-      <LinearGradient
-        colors={[...AUTH_GRADIENT]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles.outlineOuter}
-      >
-        <View style={[styles.outlineInner, styles.googleInner, { backgroundColor: fillColor }]}>
-          {loading ? (
-            <ActivityIndicator color={gColor} />
-          ) : (
-            <Text style={[styles.googleG, { color: gColor }]}>G</Text>
-          )}
-        </View>
-      </LinearGradient>
-    </Pressable>
-  );
-}
-
 export const authFieldRadius = 16;
 
 export function authInputStyle(
@@ -333,14 +294,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 16,
     fontWeight: "700",
-  },
-  googleInner: {
-    minHeight: 54,
-  },
-  googleG: {
-    fontFamily: FontFamily.body,
-    fontSize: 28,
-    fontWeight: "900",
   },
   btnPressed: { opacity: 0.92 },
   btnMuted: { opacity: 0.55 },

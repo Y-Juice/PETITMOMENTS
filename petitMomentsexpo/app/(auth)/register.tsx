@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AuthOrDivider,
   AuthWelcomeLine,
-  GoogleSignInButton,
   GradientOutlineButton,
   GradientPrimaryButton,
   PetitMomentLogoBlock,
@@ -31,7 +30,7 @@ const MIN_PASSWORD = 6;
 const MIN_USERNAME = 2;
 
 export default function RegisterScreen() {
-  const { signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signUpWithEmail } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
@@ -46,7 +45,6 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmationHint, setConfirmationHint] = useState(false);
 
@@ -82,18 +80,6 @@ export default function RegisterScreen() {
     if (error) setFormError(error);
     else if (needsConfirmation) setConfirmationHint(true);
   }, [email, password, signUpWithEmail, termsAccepted, username]);
-
-  const onGoogle = useCallback(async () => {
-    if (!termsAccepted) {
-      setFormError('Accepteer eerst de algemene voorwaarden.');
-      return;
-    }
-    setFormError(null);
-    setGoogleLoading(true);
-    const { error } = await signInWithGoogle();
-    setGoogleLoading(false);
-    if (error) setFormError(error);
-  }, [signInWithGoogle, termsAccepted]);
 
   const inputExtras = Platform.select({
     ios: {
@@ -196,7 +182,7 @@ export default function RegisterScreen() {
             label={submitting ? 'Bezig…' : 'Registreren'}
             onPress={() => void handleSubmit()}
             loading={submitting}
-            disabled={submitting || googleLoading || locked}
+            disabled={submitting || locked}
           />
 
           <AuthOrDivider />
@@ -207,16 +193,6 @@ export default function RegisterScreen() {
               href="/login"
               textColor={Brand.primary}
               fillColor={backgroundColor}
-            />
-          </View>
-
-          <View style={styles.gap}>
-            <GoogleSignInButton
-              onPress={() => void onGoogle()}
-              disabled={submitting || locked}
-              loading={googleLoading}
-              fillColor={backgroundColor}
-              gColor={Brand.primary}
             />
           </View>
         </ScrollView>
