@@ -22,6 +22,7 @@ export default function AddMomentScreenWeb() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -53,6 +54,7 @@ export default function AddMomentScreenWeb() {
     setLocationLabel('');
     setLatitude('');
     setLongitude('');
+    setIsPublic(true);
   };
 
   const submitMoment = async () => {
@@ -98,6 +100,7 @@ export default function AddMomentScreenWeb() {
       address: trimmedLabel,
       latitude: parsedLat,
       longitude: parsedLng,
+      isPublic,
     });
 
     if (error) {
@@ -114,6 +117,8 @@ export default function AddMomentScreenWeb() {
       locationLabel: trimmedLabel,
       latitude: parsedLat,
       longitude: parsedLng,
+      isPublic,
+      ownerId: session.user.id,
     });
 
     setIsSubmitting(false);
@@ -178,6 +183,43 @@ export default function AddMomentScreenWeb() {
             </View>
           </View>
 
+          <Text style={[styles.label, { color: textColor }]}>Zichtbaarheid</Text>
+          <View style={[styles.privacyRow, { borderColor }]}>
+            <Pressable
+              style={[
+                styles.privacyOption,
+                isPublic && styles.privacyOptionActive,
+              ]}
+              onPress={() => setIsPublic(true)}>
+              <Text
+                style={[
+                  styles.privacyOptionText,
+                  { color: isPublic ? '#FFFFFF' : textColor },
+                ]}>
+                Publiek
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.privacyOption,
+                !isPublic && styles.privacyOptionActive,
+              ]}
+              onPress={() => setIsPublic(false)}>
+              <Text
+                style={[
+                  styles.privacyOptionText,
+                  { color: !isPublic ? '#FFFFFF' : textColor },
+                ]}>
+                Privé
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.hint, { color: muted }]}>
+            {isPublic
+              ? 'Iedereen kan dit moment zien op de homepage en kaart.'
+              : 'Alleen jij kan dit moment zien (zichtbaar op je profiel).'}
+          </Text>
+
           <Pressable style={styles.submitButton} onPress={() => void submitMoment()} disabled={isSubmitting}>
             <Text style={styles.submitButtonText}>
               {isSubmitting ? 'Moment opslaan...' : 'Moment delen'}
@@ -238,6 +280,32 @@ const styles = StyleSheet.create({
   },
   coordCol: {
     flex: 1,
+  },
+  privacyRow: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  privacyOption: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyOptionActive: {
+    backgroundColor: '#2D6EA8',
+  },
+  privacyOptionText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  hint: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
+    marginBottom: 14,
   },
   submitButton: {
     marginTop: 8,

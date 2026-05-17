@@ -20,6 +20,10 @@ export type Moment = {
   /** Shown on home cards: net score with up (green) or down (red) badge. */
   score: number;
   scoreDirection: "up" | "down";
+  /** Supabase auth.users id of the creator. Null voor seed/mock data. */
+  ownerId?: string | null;
+  /** True = zichtbaar voor iedereen, false = alleen voor de eigenaar. */
+  isPublic?: boolean;
 };
 
 export const MOCK_MOMENTS: Moment[] = [

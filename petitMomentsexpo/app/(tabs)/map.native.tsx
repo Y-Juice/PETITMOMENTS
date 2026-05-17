@@ -3,13 +3,13 @@ import * as Location from "expo-location";
 import type { ComponentRef } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import type { MapType } from "react-native-maps";
 import Marker from "react-native-maps/lib/MapMarker";
@@ -25,8 +25,8 @@ import { useMoments } from "@/contexts/moments-context";
 import { useThreads } from "@/contexts/threads-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
-    getInitialRegionForCoordinates,
-    getMomentCoordinates,
+  getInitialRegionForCoordinates,
+  getMomentCoordinates,
 } from "@/utils/moments-map-region";
 import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
 
@@ -208,7 +208,7 @@ export default function MapScreenNative() {
     void fetchUserLocation();
   }, [fetchUserLocation]);
 
-  const composerBottom = insets.bottom + 72;
+  const composerBottom = insets.bottom + 12;
 
   return (
     <MapScreenShell>
@@ -290,8 +290,8 @@ export default function MapScreenNative() {
             ]}
           >
             <Text style={[styles.composerThreadHelp, { color: muted }]}>
-              Thread modus: tik op pins in volgorde. Tik opnieuw om een moment uit
-              de route te halen.
+              Thread modus: tik op pins in volgorde. Tik opnieuw om een moment
+              uit de route te halen.
             </Text>
             <Text style={[styles.composerHint, { color: muted }]}>
               Minimaal 2 momenten. Volgorde:{" "}
@@ -388,7 +388,11 @@ export default function MapScreenNative() {
                 mapCoordinates.length === 0 && styles.disabledBtn,
               ]}
             >
-              <MaterialIcons name="zoom-out-map" size={22} color={buttonTextColor} />
+              <MaterialIcons
+                name="zoom-out-map"
+                size={22}
+                color={buttonTextColor}
+              />
             </Pressable>
             <Pressable
               onPress={toggleMapViewType}
@@ -530,6 +534,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
+    zIndex: 1000,
   },
   composerThreadHelp: {
     fontFamily: FontFamily.body,

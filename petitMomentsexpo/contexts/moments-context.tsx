@@ -9,6 +9,10 @@ import React, {
 
 import { useAuth } from "@/contexts/auth-context";
 import type { Moment } from "@/data/mockMoments";
+import {
+  deleteMomentInSupabase,
+  updateMomentInSupabase,
+} from "@/utils/moments-supabase";
 import { supabase } from "@/utils/supabase";
 
 type CreateMomentInput = {
@@ -19,6 +23,14 @@ type CreateMomentInput = {
   locationLabel: string;
   latitude: number;
   longitude: number;
+  isPublic: boolean;
+  ownerId: string;
+};
+
+type UpdateMomentPatch = {
+  description?: string;
+  locationLabel?: string;
+  isPublic?: boolean;
 };
 
 type MomentsContextValue = {
@@ -27,6 +39,8 @@ type MomentsContextValue = {
   loadError: string | null;
   refreshMoments: () => void;
   addMoment: (input: CreateMomentInput) => void;
+  updateMoment: (id: string, patch: UpdateMomentPatch) => Promise<{ error: string | null }>;
+  deleteMoment: (id: string) => Promise<{ error: string | null }>;
 };
 
 const MomentsContext = createContext<MomentsContextValue | undefined>(
@@ -164,6 +178,12 @@ function rowToMoment(
   const caption = String(row.caption ?? "").trim();
   const address = String(row.address ?? "").trim();
   const imageUrl = String(row.media_url ?? "");
+  const ownerId =
+    typeof row.user_id === "string" ? row.user_id : null;
+  // Onbekend (oude rijen zonder is_public) behandelen we als publiek,
+  // zodat bestaande data niet plots verdwijnt na de migratie.
+  const isPublic =
+    typeof row.is_public === "boolean" ? row.is_public : true;
 
   return {
     id: String(row.id ?? Date.now()),
@@ -178,6 +198,8 @@ function rowToMoment(
     },
     score: 0,
     scoreDirection: "up",
+    ownerId,
+    isPublic,
   };
 }
 
@@ -197,7 +219,7 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
     const withCoords = await supabase
       .from("moments")
       .select(
-        "id, caption, address, media_url, created_at, location, latitude:ST_Y(location::geometry), longitude:ST_X(location::geometry)",
+        "id, user_id, is_public, caption, address, media_url, created_at, location, latitude:ST_Y(location::geometry), longitude:ST_X(location::geometry)",
       )
       .order("created_at", { ascending: false });
 
@@ -209,7 +231,9 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
     if (withCoords.error) {
       const simple = await supabase
         .from("moments")
-        .select("id, caption, address, media_url, location, created_at")
+        .select(
+          "id, user_id, is_public, caption, address, media_url, location, created_at",
+        )
         .order("created_at", { ascending: false });
 
       if (simple.error) {
@@ -318,22 +342,89 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
       },
       score: 0,
       scoreDirection: "up",
+      ownerId: input.ownerId,
+      isPublic: input.isPublic,
     };
 
     setMoments((current) => [newMoment, ...current]);
   };
 
+  const updateMoment = useCallback(
+    async (id: string, patch: UpdateMomentPatch) => {
+      const { error } = await updateMomentInSupabase({
+        id,
+        caption: patch.description,
+        address: patch.locationLabel,
+        isPublic: patch.isPublic,
+      });
+      if (error) return { error };
+
+      setMoments((current) =>
+        current.map((m) => {
+          if (m.id !== id) return m;
+          const nextDescription =
+            typeof patch.description === "string"
+              ? patch.description.trim()
+              : m.description;
+          const nextLabel =
+            typeof patch.locationLabel === "string"
+              ? patch.locationLabel.trim()
+              : m.location.label;
+          return {
+            ...m,
+            description: nextDescription || m.description,
+            title: createTitleFromDescription(
+              nextDescription || nextLabel || m.title,
+            ),
+            location: { ...m.location, label: nextLabel },
+            isPublic:
+              typeof patch.isPublic === "boolean" ? patch.isPublic : m.isPublic,
+          };
+        }),
+      );
+
+      return { error: null };
+    },
+    [],
+  );
+
+  const deleteMoment = useCallback(async (id: string) => {
+    const { error } = await deleteMomentInSupabase(id);
+    if (error) return { error };
+    setMoments((current) => current.filter((m) => m.id !== id));
+    return { error: null };
+  }, []);
+
+  /* Verberg private momenten van andere gebruikers in alle gedeelde feeds. */
+  const currentUserId = session?.user?.id ?? null;
+  const visibleMoments = useMemo(
+    () =>
+      moments.filter(
+        (m) => m.isPublic !== false || (currentUserId && m.ownerId === currentUserId),
+      ),
+    [moments, currentUserId],
+  );
+
   const value = useMemo<MomentsContextValue>(
     () => ({
-      moments,
+      moments: visibleMoments,
       loading,
       loadError,
       refreshMoments: () => {
         void loadMoments();
       },
       addMoment,
+      updateMoment,
+      deleteMoment,
     }),
-    [moments, loading, loadError, loadMoments],
+    [
+      visibleMoments,
+      loading,
+      loadError,
+      loadMoments,
+      updateMoment,
+      deleteMoment,
+    ],
   );
 
   return (

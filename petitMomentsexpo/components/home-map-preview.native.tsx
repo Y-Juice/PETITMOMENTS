@@ -6,7 +6,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Marker from "react-native-maps/lib/MapMarker";
 import MapView from "react-native-maps/lib/MapView";
 
-import { MapPlaceholder } from "@/components/map-placeholder";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
@@ -54,12 +53,12 @@ export default function HomeMapPreview() {
     return () => cancelAnimationFrame(id);
   }, [fitMap]);
 
-  if (coordinates.length === 0) {
-    return <MapPlaceholder />;
-  }
-
   const countLabel =
-    moments.length === 1 ? "1 moment" : `${moments.length} momenten`;
+    moments.length === 0
+      ? "Nog geen momenten"
+      : moments.length === 1
+        ? "1 moment"
+        : `${moments.length} momenten`;
 
   return (
     <View style={styles.wrap}>
