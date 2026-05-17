@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useCallback, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,6 +12,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  AuthOrDivider,
+  AuthWelcomeLine,
+  GoogleSignInButton,
+  GradientOutlineButton,
+  GradientPrimaryButton,
+  PetitMomentLogoBlock,
+  TermsAcceptRow,
+  authInputStyle,
+} from '@/components/auth/auth-screen-shared';
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
@@ -20,20 +30,30 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 const MIN_PASSWORD = 6;
 
 export default function LoginScreen() {
-  const { signInWithEmail } = useAuth();
+  const { signInWithEmail, signInWithGoogle } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
-  const tint = useThemeColor({}, 'tint');
+  const welcomeColor = useThemeColor(
+    { light: '#4A4A4A', dark: 'rgba(255, 253, 226, 0.82)' },
+    'text',
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
     const e = email.trim();
     setFormError(null);
+    if (!termsAccepted) {
+      setFormError('Je moet de algemene voorwaarden accepteren om verder te gaan.');
+      return;
+    }
     if (!e.includes('@')) {
       setFormError('Gebruik een geldig e-mailadres.');
       return;
@@ -47,7 +67,19 @@ export default function LoginScreen() {
     const { error } = await signInWithEmail(e, password);
     setSubmitting(false);
     if (error) setFormError(error);
-  }, [email, password, signInWithEmail]);
+  }, [email, password, signInWithEmail, termsAccepted]);
+
+  const onGoogle = useCallback(async () => {
+    if (!termsAccepted) {
+      setFormError('Accepteer eerst de algemene voorwaarden.');
+      return;
+    }
+    setFormError(null);
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (error) setFormError(error);
+  }, [signInWithGoogle, termsAccepted]);
 
   const inputExtras = Platform.select({
     ios: {
@@ -57,6 +89,8 @@ export default function LoginScreen() {
     default: {},
   });
 
+  const fieldBase = authInputStyle(textColor, muted) as Record<string, unknown>;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -64,18 +98,16 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled">
-          <Text style={[styles.logoPetit, { color: Brand.primary }]}>petit</Text>
-          <Text style={[styles.logoMoments, { color: Brand.primary }]}>moments</Text>
-          <Text style={[styles.heading, { color: textColor }]}>Inloggen</Text>
-          <Text style={[styles.sub, { color: muted }]}>
-            Log in om je bibliotheek en momenten te zien.
-          </Text>
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <PetitMomentLogoBlock />
+          <AuthWelcomeLine color={welcomeColor}>
+            Welkom — log in of maak een account aan.
+          </AuthWelcomeLine>
 
-          <Text style={[styles.label, { color: textColor }]}>E-mail</Text>
           <TextInput
-            style={[styles.field, { color: textColor, borderColor: muted }]}
-            placeholder="jan@voorbeeld.nl"
+            style={fieldBase}
+            placeholder="E-mailadres"
             placeholderTextColor={`${muted}99`}
             value={email}
             onChangeText={setEmail}
@@ -85,36 +117,71 @@ export default function LoginScreen() {
             {...inputExtras}
           />
 
-          <Text style={[styles.label, { color: textColor }]}>Wachtwoord</Text>
-          <TextInput
-            style={[styles.field, { color: textColor, borderColor: muted }]}
-            placeholder="••••••••"
-            placeholderTextColor={`${muted}99`}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-            textContentType="password"
-            {...inputExtras}
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={[
+                fieldBase,
+                styles.passwordInput,
+                { paddingRight: 48, marginBottom: 0 },
+              ]}
+              placeholder="Wachtwoord"
+              placeholderTextColor={`${muted}99`}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
+              textContentType="password"
+              {...inputExtras}
+            />
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              style={styles.eyeBtn}
+              accessibilityLabel={showPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
+              hitSlop={10}>
+              <MaterialIcons
+                name={showPassword ? 'visibility-off' : 'visibility'}
+                size={22}
+                color={muted}
+              />
+            </Pressable>
+          </View>
+
+          <TermsAcceptRow
+            checked={termsAccepted}
+            onToggle={() => setTermsAccepted((v) => !v)}
+            borderColor={muted}
+            mutedColor={muted}
+            linkColor={Brand.primary}
           />
 
           {formError ? <Text style={styles.error}>{formError}</Text> : null}
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              { backgroundColor: tint, opacity: pressed || submitting ? 0.85 : 1 },
-            ]}
+          <GradientPrimaryButton
+            label={submitting ? 'Bezig…' : 'Inloggen'}
             onPress={() => void handleSubmit()}
-            disabled={submitting}>
-            <Text style={styles.primaryBtnLabel}>{submitting ? 'Bezig…' : 'Log in'}</Text>
-          </Pressable>
+            loading={submitting}
+            disabled={submitting || googleLoading}
+          />
 
-          <View style={styles.footerRow}>
-            <Text style={[styles.footerText, { color: muted }]}>Nog geen account? </Text>
-            <Link href="/register">
-              <Text style={[styles.link, { color: tint }]}>Registreren</Text>
-            </Link>
+          <AuthOrDivider />
+
+          <View style={styles.gap}>
+            <GradientOutlineButton
+              label="Registreren"
+              href="/register"
+              textColor={Brand.primary}
+              fillColor={backgroundColor}
+            />
+          </View>
+
+          <View style={styles.gap}>
+            <GoogleSignInButton
+              onPress={() => void onGoogle()}
+              disabled={submitting}
+              loading={googleLoading}
+              fillColor={backgroundColor}
+              gColor={Brand.primary}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -128,84 +195,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 40,
     flexGrow: 1,
   },
-  logoPetit: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 28,
-    lineHeight: 32,
-    letterSpacing: -0.5,
+  passwordWrap: {
+    position: 'relative',
+    marginBottom: 14,
   },
-  logoMoments: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 28,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-    marginTop: -4,
-    marginLeft: '4%',
-    marginBottom: 28,
+  passwordInput: {
+    marginBottom: 0,
   },
-  heading: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 22,
-    marginBottom: 6,
-  },
-  sub: {
-    fontFamily: FontFamily.body,
-    fontSize: 15,
-    marginBottom: 24,
-  },
-  label: {
-    fontFamily: FontFamily.body,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  field: {
-    fontFamily: FontFamily.body,
-    fontSize: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-    marginBottom: 6,
+  eyeBtn: {
+    position: 'absolute',
+    right: 12,
+    top: 14,
   },
   error: {
     fontFamily: FontFamily.body,
     fontSize: 14,
     color: Brand.primary,
-    marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  primaryBtn: {
-    marginTop: 20,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  primaryBtnLabel: {
-    fontFamily: FontFamily.body,
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  footerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontFamily: FontFamily.body,
-    fontSize: 15,
-  },
-  link: {
-    fontFamily: FontFamily.body,
-    fontSize: 15,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+  gap: {
+    marginBottom: 12,
   },
 });
