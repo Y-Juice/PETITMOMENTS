@@ -1,23 +1,23 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import type { ReactNode } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { FontFamily } from '@/constants/typography';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { FontFamily } from "@/constants/typography";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type MapScreenShellProps = {
   children: ReactNode;
-  /** Extra line under the title (e.g. web-only hint). */
+  /** Extra line under the title (e.g. thread mode or web-only hint). */
   noteBelowTitle?: string;
 };
 
 export function MapScreenShell({ children, noteBelowTitle }: MapScreenShellProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const muted = useThemeColor({}, 'icon');
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "icon");
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={["top"]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: textColor }]}>Kaart</Text>
         {noteBelowTitle ? (

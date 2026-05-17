@@ -3,17 +3,18 @@ import * as Location from "expo-location";
 import type { ComponentRef } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
+import type { MapType } from "react-native-maps";
 import Marker from "react-native-maps/lib/MapMarker";
-import MapView from "react-native-maps/lib/MapView";
 import Polyline from "react-native-maps/lib/MapPolyline";
+import MapView from "react-native-maps/lib/MapView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MapScreenShell } from "@/components/map-screen-shell";
@@ -24,8 +25,8 @@ import { useMoments } from "@/contexts/moments-context";
 import { useThreads } from "@/contexts/threads-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
-  getInitialRegionForCoordinates,
-  getMomentCoordinates,
+    getInitialRegionForCoordinates,
+    getMomentCoordinates,
 } from "@/utils/moments-map-region";
 import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
 
@@ -49,6 +50,7 @@ export default function MapScreenNative() {
   const [selectedMomentIds, setSelectedMomentIds] = useState<string[]>([]);
   const [threadTitle, setThreadTitle] = useState("");
   const [savingThread, setSavingThread] = useState(false);
+  const [mapViewType, setMapViewType] = useState<MapType>("standard");
 
   const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
   const mapCoordinates = useMemo(() => {
@@ -112,7 +114,10 @@ export default function MapScreenNative() {
       .map((id) => moments.find((m) => m.id === id))
       .filter(Boolean);
     if (orderedMoments.length < 2) {
-      Alert.alert("Ongeldige selectie", "Deze momenten zijn niet meer beschikbaar.");
+      Alert.alert(
+        "Ongeldige selectie",
+        "Deze momenten zijn niet meer beschikbaar.",
+      );
       return;
     }
 
@@ -130,18 +135,15 @@ export default function MapScreenNative() {
         return;
       }
       await refreshThreads();
-      Alert.alert("Opgeslagen", "Je thread staat bij Discussies op de homepagina.");
+      Alert.alert(
+        "Opgeslagen",
+        "Je thread staat bij Discussies op de homepagina.",
+      );
       exitCompose();
     } finally {
       setSavingThread(false);
     }
-  }, [
-    selectedMomentIds,
-    moments,
-    threadTitle,
-    refreshThreads,
-    exitCompose,
-  ]);
+  }, [selectedMomentIds, moments, threadTitle, refreshThreads, exitCompose]);
 
   const startCompose = useCallback(() => {
     if (moments.length < 2) {
@@ -163,6 +165,10 @@ export default function MapScreenNative() {
       animated: true,
     });
   }, [mapCoordinates]);
+
+  const toggleMapViewType = useCallback(() => {
+    setMapViewType((prev) => (prev === "hybrid" ? "standard" : "hybrid"));
+  }, []);
 
   const fetchUserLocation = useCallback(async () => {
     try {
@@ -216,10 +222,11 @@ export default function MapScreenNative() {
           style={styles.map}
           initialRegion={initialRegion}
           onMapReady={fitMap}
-          mapType="standard"
+          mapType={mapViewType}
           rotateEnabled={false}
           pitchEnabled={false}
           toolbarEnabled={false}
+          showsScale
         >
           {moments.map((moment) => {
             const selected = selectedMomentIds.includes(moment.id);
@@ -243,7 +250,11 @@ export default function MapScreenNative() {
                     : `${moment.username} · ${moment.location.label}`
                 }
                 pinColor={
-                  composeThread ? (selected ? SELECTED_PIN : Brand.primary) : undefined
+                  composeThread
+                    ? selected
+                      ? SELECTED_PIN
+                      : Brand.primary
+                    : undefined
                 }
                 tracksViewChanges={false}
                 onPress={
@@ -328,7 +339,9 @@ export default function MapScreenNative() {
                 {savingThread ? (
                   <ActivityIndicator color={buttonTextColor} />
                 ) : (
-                  <Text style={[styles.primaryBtnText, { color: buttonTextColor }]}>
+                  <Text
+                    style={[styles.primaryBtnText, { color: buttonTextColor }]}
+                  >
                     Opslaan
                   </Text>
                 )}
@@ -355,10 +368,49 @@ export default function MapScreenNative() {
               size={18}
               color={buttonTextColor}
             />
-            <Text style={[styles.locationButtonText, { color: buttonTextColor }]}>
+            <Text
+              style={[styles.locationButtonText, { color: buttonTextColor }]}
+            >
               {composeThread ? "Stop thread" : "Thread maken"}
             </Text>
           </Pressable>
+
+          <View style={styles.toolRow}>
+            <Pressable
+              onPress={fitMap}
+              disabled={mapCoordinates.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel="Toon alle pins op de kaart"
+              style={({ pressed }) => [
+                styles.roundTool,
+                { backgroundColor: buttonColor },
+                pressed && styles.pressedBtn,
+                mapCoordinates.length === 0 && styles.disabledBtn,
+              ]}
+            >
+              <MaterialIcons name="zoom-out-map" size={22} color={buttonTextColor} />
+            </Pressable>
+            <Pressable
+              onPress={toggleMapViewType}
+              accessibilityRole="button"
+              accessibilityLabel={
+                mapViewType === "hybrid"
+                  ? "Schakel naar normale kaart"
+                  : "Schakel naar hybride kaart met satellietbeeld"
+              }
+              style={({ pressed }) => [
+                styles.roundTool,
+                { backgroundColor: buttonColor },
+                pressed && styles.pressedBtn,
+              ]}
+            >
+              <MaterialIcons
+                name={mapViewType === "hybrid" ? "map" : "layers"}
+                size={22}
+                color={buttonTextColor}
+              />
+            </Pressable>
+          </View>
 
           <Pressable
             onPress={() => void fetchUserLocation()}
@@ -374,12 +426,16 @@ export default function MapScreenNative() {
               size={16}
               color={buttonTextColor}
             />
-            <Text style={[styles.locationButtonText, { color: buttonTextColor }]}>
+            <Text
+              style={[styles.locationButtonText, { color: buttonTextColor }]}
+            >
               {isLocating ? "Locatie laden..." : "Mijn locatie"}
             </Text>
           </Pressable>
           {locationError ? (
-            <Text style={[styles.errorText, { color: muted }]}>{locationError}</Text>
+            <Text style={[styles.errorText, { color: muted }]}>
+              {locationError}
+            </Text>
           ) : null}
         </View>
       </View>
@@ -400,6 +456,23 @@ const styles = StyleSheet.create({
     bottom: 14,
     width: 188,
     gap: 10,
+  },
+  toolRow: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  roundTool: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
+    elevation: 3,
   },
   threadModeButton: {
     borderRadius: 999,
