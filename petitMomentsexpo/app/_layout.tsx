@@ -11,6 +11,7 @@ import { MomentDetailOverlayProvider } from '@/contexts/moment-detail-overlay-co
 import { MomentsProvider } from '@/contexts/moments-context';
 import { SavesProvider } from '@/contexts/saves-context';
 import { ThreadsProvider } from '@/contexts/threads-context';
+import { VotesProvider } from '@/contexts/votes-context';
 import { useAppFonts } from '@/hooks/use-app-fonts';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/utils/supabase';
@@ -54,9 +55,10 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <SavesProvider>
-          <MomentsProvider>
-            <MomentDetailOverlayProvider>
-              <ThreadsProvider>
+          <VotesProvider>
+            <MomentsProvider>
+              <MomentDetailOverlayProvider>
+                <ThreadsProvider>
                 {appReady ? (
                   <>
                     <Stack>
@@ -68,9 +70,10 @@ export default function RootLayout() {
                     <StatusBar style="auto" />
                   </>
                 ) : null}
-              </ThreadsProvider>
-            </MomentDetailOverlayProvider>
-          </MomentsProvider>
+                </ThreadsProvider>
+              </MomentDetailOverlayProvider>
+            </MomentsProvider>
+          </VotesProvider>
         </SavesProvider>
       </AuthProvider>
     </ThemeProvider>

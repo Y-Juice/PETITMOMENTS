@@ -1,13 +1,5 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useMemo } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { MomentCard } from '@/components/moment-card';
 import { Brand, getMomentCardColors } from '@/constants/theme';
@@ -15,54 +7,47 @@ import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
 import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
 import { useMoments } from '@/contexts/moments-context';
-import { useSaves } from '@/contexts/saves-context';
 import { useThreads, type ThreadItem } from '@/contexts/threads-context';
+import { useVotes } from '@/contexts/votes-context';
 import type { Moment } from '@/data/mockMoments';
+import type { VoteDirection } from '@/utils/votes-supabase';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
-export function SavedItemsList() {
+type Props = {
+  direction: VoteDirection;
+};
+
+export function VotedItemsList({ direction }: Props) {
   const { session } = useAuth();
   const { moments } = useMoments();
   const { threads } = useThreads();
-  const {
-    savedMomentIds,
-    savedThreadIds,
-    loading,
-    loadError,
-    toggleThreadSave,
-  } = useSaves();
+  const { myMomentVotes, myThreadVotes, loading, loadError } = useVotes();
   const { presentMomentById } = useMomentDetailOverlay();
 
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
 
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const votedMoments = useMemo<Moment[]>(() => {
+    const ids = new Set<string>();
+    myMomentVotes.forEach((dir, id) => {
+      if (dir === direction) ids.add(id);
+    });
+    return moments.filter((m) => ids.has(m.id));
+  }, [moments, myMomentVotes, direction]);
 
-  const savedMoments = useMemo<Moment[]>(
-    () => moments.filter((m) => savedMomentIds.has(m.id)),
-    [moments, savedMomentIds],
-  );
-  const savedThreads = useMemo<ThreadItem[]>(
-    () => threads.filter((t) => savedThreadIds.has(t.id)),
-    [threads, savedThreadIds],
-  );
-
-  const onUnsaveThread = useCallback(
-    async (threadId: string) => {
-      if (busyId) return;
-      setBusyId(threadId);
-      const { error } = await toggleThreadSave(threadId);
-      setBusyId(null);
-      if (error) Alert.alert('Bijwerken mislukt', error);
-    },
-    [busyId, toggleThreadSave],
-  );
+  const votedThreads = useMemo<ThreadItem[]>(() => {
+    const ids = new Set<string>();
+    myThreadVotes.forEach((dir, id) => {
+      if (dir === direction) ids.add(id);
+    });
+    return threads.filter((t) => ids.has(t.id));
+  }, [threads, myThreadVotes, direction]);
 
   if (!session?.user?.id) {
     return (
       <Text style={[styles.emptyText, { color: muted }]}>
-        Log in om je opgeslagen items te zien.
+        Log in om je stemmen te zien.
       </Text>
     );
   }
@@ -75,34 +60,38 @@ export function SavedItemsList() {
     );
   }
 
-  if (savedMoments.length === 0 && savedThreads.length === 0) {
+  const totalCount = votedMoments.length + votedThreads.length;
+  const labelWord = direction === 'up' ? 'geüpvote' : 'gedownvote';
+
+  if (totalCount === 0) {
     return (
       <Text style={[styles.emptyText, { color: muted }]}>
-        Je hebt nog niets opgeslagen. Tik op het bladwijzer-icoon op een moment
-        of discussie om het hier te bewaren.
+        Je hebt nog niets {labelWord}. Gebruik de pijl-knoppen op een moment of
+        discussie om hier dingen te verzamelen.
       </Text>
     );
   }
 
-  const momentsCount = savedMoments.length;
+  const momentsCount = votedMoments.length;
 
   return (
     <View style={styles.sections}>
       {loadError ? (
-        <Text style={[styles.errorText, { color: Brand.primary }]}>{loadError}</Text>
+        <Text style={[styles.errorText, { color: Brand.primary }]}>
+          {loadError}
+        </Text>
       ) : null}
 
       <Text style={[styles.sectionLabel, { color: textColor }]}>
-        Opgeslagen momenten
+        Momenten ({momentsCount})
       </Text>
       {momentsCount === 0 ? (
         <Text style={[styles.emptyText, { color: muted }]}>
-          Nog geen momenten bewaard. Tik in een moment op &quot;Bewaar&quot; om
-          het hier te zien.
+          Nog geen momenten {labelWord}.
         </Text>
       ) : (
         <View style={styles.momentList}>
-          {savedMoments.map((moment, index) => {
+          {votedMoments.map((moment, index) => {
             const position =
               momentsCount === 1
                 ? 'single'
@@ -125,18 +114,16 @@ export function SavedItemsList() {
       )}
 
       <Text style={[styles.sectionLabel, { color: textColor }]}>
-        Opgeslagen discussies
+        Discussies ({votedThreads.length})
       </Text>
-      {savedThreads.length === 0 ? (
+      {votedThreads.length === 0 ? (
         <Text style={[styles.emptyText, { color: muted }]}>
-          Nog geen discussies bewaard. Tik op het bladwijzer-icoon naast een
-          discussie om het hier te zien.
+          Nog geen discussies {labelWord}.
         </Text>
       ) : (
         <View style={styles.threadList}>
-          {savedThreads.map((thread, index) => {
+          {votedThreads.map((thread, index) => {
             const palette = getMomentCardColors(index);
-            const isBusy = busyId === thread.id;
             const preview =
               thread.body.length > 160
                 ? `${thread.body.slice(0, 157).trimEnd()}...`
@@ -145,41 +132,16 @@ export function SavedItemsList() {
               <View
                 key={thread.id}
                 style={[styles.threadCard, { backgroundColor: palette.bg }]}>
-                <View style={styles.threadHeaderRow}>
-                  <Text
-                    style={[styles.threadTitle, { color: palette.text }]}
-                    numberOfLines={2}>
-                    {thread.title}
-                  </Text>
-                  <Pressable
-                    onPress={() => void onUnsaveThread(thread.id)}
-                    disabled={isBusy}
-                    style={({ pressed }) => [
-                      styles.threadSaveBtn,
-                      { borderColor: palette.text },
-                      pressed && styles.threadSaveBtnPressed,
-                      isBusy && styles.threadSaveBtnDisabled,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Verwijder uit opgeslagen">
-                    {isBusy ? (
-                      <ActivityIndicator size="small" color={palette.text} />
-                    ) : (
-                      <MaterialIcons
-                        name="bookmark"
-                        size={20}
-                        color={palette.text}
-                      />
-                    )}
-                  </Pressable>
-                </View>
-
+                <Text
+                  style={[styles.threadTitle, { color: palette.text }]}
+                  numberOfLines={2}>
+                  {thread.title}
+                </Text>
                 {thread.momentIds?.length ? (
                   <Text style={[styles.threadMeta, { color: palette.sub }]}>
                     Route: {thread.momentIds.length} momenten
                   </Text>
                 ) : null}
-
                 {preview ? (
                   <Text
                     style={[styles.threadBody, { color: palette.sub }]}
@@ -210,7 +172,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  /** Matches the stacked look of MomentCard on the home feed (cards overlap each other). */
   momentList: {
     paddingTop: 50,
   },
@@ -222,32 +183,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  threadHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 6,
-  },
   threadTitle: {
-    flex: 1,
     fontFamily: FontFamily.titleBold,
     fontSize: 17,
     lineHeight: 22,
-  },
-  threadSaveBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-  },
-  threadSaveBtnPressed: {
-    opacity: 0.85,
-  },
-  threadSaveBtnDisabled: {
-    opacity: 0.7,
+    marginBottom: 6,
   },
   threadMeta: {
     fontFamily: FontFamily.body,

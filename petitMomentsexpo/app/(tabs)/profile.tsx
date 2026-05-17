@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SavedItemsList } from '@/components/saved-items-list';
+import { VotedItemsList } from '@/components/voted-items-list';
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
@@ -214,8 +215,8 @@ export default function ProfileScreen() {
   let tabContent: React.ReactNode = null;
   if (activeTab === 'created') tabContent = renderCreatedTab();
   else if (activeTab === 'saved') tabContent = <SavedItemsList />;
-  else if (activeTab === 'upvoted') tabContent = renderPlaceholderTab('upvotes');
-  else if (activeTab === 'downvoted') tabContent = renderPlaceholderTab('downvotes');
+  else if (activeTab === 'upvoted') tabContent = <VotedItemsList direction="up" />;
+  else if (activeTab === 'downvoted') tabContent = <VotedItemsList direction="down" />;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>

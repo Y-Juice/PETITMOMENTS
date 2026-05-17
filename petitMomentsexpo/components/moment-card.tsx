@@ -1,8 +1,9 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { VoteWidget } from "@/components/vote-widget";
 import { getMomentCardColors } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
+import { useVotes } from "@/contexts/votes-context";
 import type { Moment } from "@/data/mockMoments";
 
 type Props = {
@@ -15,9 +16,9 @@ type Props = {
 
 export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
   const colors = getMomentCardColors(colorIndex);
-  const isUp = moment.scoreDirection === "up";
-  const badgeBg = "#FFFFFF";
-  const arrowColor = isUp ? "#2E7D4A" : "#C62828";
+  const { momentSummary, myMomentVote, voteOnMoment } = useVotes();
+  const summary = momentSummary(moment.id);
+  const myVote = myMomentVote(moment.id);
 
   const radiusStyle =
     position === "single"
@@ -50,15 +51,16 @@ export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
             {moment.username}, {moment.location.label}
           </Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-          <MaterialIcons
-            name={isUp ? "arrow-upward" : "arrow-downward"}
-            size={16}
-            color={arrowColor}
+        <View style={styles.voteWrap}>
+          <VoteWidget
+            score={summary.score}
+            myVote={myVote}
+            onUp={() => void voteOnMoment(moment.id, "up")}
+            onDown={() => void voteOnMoment(moment.id, "down")}
+            size="compact"
+            baseColor={colors.text}
+            surfaceColor="rgba(255,255,255,0.16)"
           />
-          <Text style={[styles.score, { color: arrowColor }]}>
-            {moment.score}
-          </Text>
         </View>
       </View>
     </Pressable>
@@ -108,17 +110,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 14,
   },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  score: {
-    fontFamily: FontFamily.body,
-    fontSize: 15,
-    fontWeight: "700",
+  voteWrap: {
+    alignItems: "flex-end",
   },
 });

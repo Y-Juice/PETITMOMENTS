@@ -2,8 +2,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 
+import { VoteWidget } from '@/components/vote-widget'
 import type { ThreadItem } from '@/contexts/threads-context'
 import { useSaves } from '@/contexts/saves-context'
+import { useVotes } from '@/contexts/votes-context'
 import { Brand } from '@/constants/theme'
 import { FontFamily } from '@/constants/typography'
 import { useThemeColor } from '@/hooks/use-theme-color'
@@ -16,8 +18,11 @@ export function ThreadRow({ thread }: Props) {
   const textColor = useThemeColor({}, 'text')
   const muted = useThemeColor({}, 'icon')
   const { isThreadSaved, toggleThreadSave } = useSaves()
+  const { threadSummary, myThreadVote, voteOnThread } = useVotes()
   const [busy, setBusy] = useState(false)
   const saved = isThreadSaved(thread.id)
+  const summary = threadSummary(thread.id)
+  const myVote = myThreadVote(thread.id)
 
   const preview =
     thread.body.length > 140 ? `${thread.body.slice(0, 137).trimEnd()}...` : thread.body
@@ -71,6 +76,17 @@ export function ThreadRow({ thread }: Props) {
           {preview}
         </Text>
       ) : null}
+
+      <View style={styles.footerRow}>
+        <VoteWidget
+          score={summary.score}
+          myVote={myVote}
+          onUp={() => void voteOnThread(thread.id, 'up')}
+          onDown={() => void voteOnThread(thread.id, 'down')}
+          size="compact"
+          baseColor={textColor}
+        />
+      </View>
     </View>
   )
 }
@@ -125,5 +141,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 14,
     lineHeight: 20,
+  },
+  footerRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
 })

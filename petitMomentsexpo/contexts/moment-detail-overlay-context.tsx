@@ -22,9 +22,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { VoteWidget } from '@/components/vote-widget';
 import { FontFamily } from '@/constants/typography';
 import { useMoments } from '@/contexts/moments-context';
 import { useSaves } from '@/contexts/saves-context';
+import { useVotes } from '@/contexts/votes-context';
 
 const CARD_BG = '#C84E3D';
 const BADGE_FG = '#1A1A1A';
@@ -50,6 +52,7 @@ export function MomentDetailOverlayProvider({
 
   const { moments, loading } = useMoments();
   const { isMomentSaved, toggleMomentSave } = useSaves();
+  const { momentSummary, myMomentVote, voteOnMoment } = useVotes();
 
   const moment = useMemo(() => {
     if (!openId) return undefined;
@@ -84,8 +87,9 @@ export function MomentDetailOverlayProvider({
     [presentMomentById, dismiss],
   );
 
-  const isUp = moment?.scoreDirection === 'up';
   const saved = moment ? isMomentSaved(moment.id) : false;
+  const voteSummary = moment ? momentSummary(moment.id) : null;
+  const myVote = moment ? myMomentVote(moment.id) : null;
 
   const onToggleSave = useCallback(async () => {
     if (!moment || savingToggle) return;
@@ -158,15 +162,21 @@ export function MomentDetailOverlayProvider({
                     <View style={styles.card}>
                       <View style={styles.titleRow}>
                         <Text style={styles.title}>{moment.title}</Text>
-                        <View style={styles.badge}>
-                          <MaterialIcons
-                            name={isUp ? 'arrow-upward' : 'arrow-downward'}
-                            size={16}
-                            color={BADGE_FG}
-                          />
-                          <Text style={styles.badgeScore}>{moment.score}</Text>
-                        </View>
                       </View>
+
+                      {voteSummary ? (
+                        <View style={styles.voteWrap}>
+                          <VoteWidget
+                            score={voteSummary.score}
+                            myVote={myVote}
+                            onUp={() => void voteOnMoment(moment.id, 'up')}
+                            onDown={() => void voteOnMoment(moment.id, 'down')}
+                            size="large"
+                            baseColor="#FFFFFF"
+                            surfaceColor="rgba(255,255,255,0.18)"
+                          />
+                        </View>
+                      ) : null}
 
                       {moment.imageUrl ? (
                         <Image
@@ -326,7 +336,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 22,
+    marginBottom: 14,
+  },
+  voteWrap: {
+    alignSelf: 'flex-start',
+    marginBottom: 18,
   },
   title: {
     flex: 1,
