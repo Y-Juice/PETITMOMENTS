@@ -8,6 +8,7 @@ import { MomentCard } from '@/components/moment-card';
 import { ThreadRow } from '@/components/thread-row';
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
+import { useAuth } from '@/contexts/auth-context';
 import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
 import { useMoments } from '@/contexts/moments-context';
 import { useThreads } from '@/contexts/threads-context';
@@ -43,6 +44,7 @@ function formatDistance(meters: number): string {
 
 export default function HomeScreen() {
   const { presentMomentById } = useMomentDetailOverlay();
+  const { session } = useAuth();
   const { moments, loading, loadError, refreshMoments } = useMoments();
   const {
     threads,
@@ -54,6 +56,13 @@ export default function HomeScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
+  const welcomeCardBg = useThemeColor(
+    { light: 'rgba(196, 69, 54, 0.08)', dark: 'rgba(196, 69, 54, 0.16)' },
+    'background',
+  );
+  const welcomeBorder = useThemeColor({ light: Brand.neutral, dark: '#3D3832' }, 'text');
+
+  const userEmail = session?.user?.email ?? '';
 
   useEffect(() => {
     let cancelled = false;
@@ -113,12 +122,21 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.logoPetit, { color: Brand.primary }]}>petit</Text>
-          <Text style={[styles.logoHome, { color: Brand.primary }]}>moments</Text>
-        </View>
-
         <HomeMapPreview />
+
+        <View
+          style={[
+            styles.welcomeCard,
+            { backgroundColor: welcomeCardBg, borderColor: welcomeBorder },
+          ]}>
+          <Text style={[styles.welcomeTitle, { color: textColor }]}>Welkom terug</Text>
+          <Text style={[styles.welcomeSub, { color: muted }]}>
+            Ontdek momenten in de buurt en de nieuwste discussies.
+          </Text>
+          {userEmail ? (
+            <Text style={[styles.welcomeEmail, { color: textColor }]}>{userEmail}</Text>
+          ) : null}
+        </View>
 
         {threadsLoadError ? (
           <View style={[styles.errorBanner, { borderColor: Brand.neutral }]}>
@@ -201,26 +219,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingTop: 12,
     paddingBottom: 24,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
+  welcomeCard: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    padding: 18,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  logoPetit: {
+  welcomeTitle: {
     fontFamily: FontFamily.titleBold,
-    fontSize: 32,
-    lineHeight: 36,
-    letterSpacing: -0.5,
+    fontSize: 22,
+    marginBottom: 8,
   },
-  logoHome: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 32,
-    lineHeight: 36,
-    letterSpacing: -0.5,
-    marginTop: '-2%',
-    marginLeft: '4%',
+  welcomeSub: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    lineHeight: 21,
+    marginBottom: 10,
+  },
+  welcomeEmail: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.95,
   },
   listWrap: {
     paddingTop: 50,

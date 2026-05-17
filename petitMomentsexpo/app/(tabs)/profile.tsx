@@ -32,8 +32,6 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>
       <View style={styles.wrap}>
-        <Text style={[styles.title, { color: textColor }]}>Profiel</Text>
-
         <Text style={[styles.emailLabel, { color: muted }]}>Ingelogd als</Text>
         <Text style={[styles.email, { color: textColor }]}>{email || '—'}</Text>
 
@@ -50,10 +48,6 @@ export default function ProfileScreen() {
             <Text style={[styles.signOutLabel, { color: tint }]}>Uitloggen</Text>
           )}
         </Pressable>
-
-        <Text style={[styles.hint, { color: muted }]}>
-          Momenten en bibliotheek zijn gekoppeld aan dit account na sync met Supabase.
-        </Text>
       </View>
     </SafeAreaView>
   );
@@ -66,11 +60,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 24,
-  },
-  title: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 22,
-    marginBottom: 24,
   },
   emailLabel: {
     fontFamily: FontFamily.body,
@@ -94,13 +83,5 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 16,
     fontWeight: '600',
-  },
-  hint: {
-    fontFamily: FontFamily.body,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 'auto',
-    paddingTop: 24,
-    textAlign: 'center',
   },
 });

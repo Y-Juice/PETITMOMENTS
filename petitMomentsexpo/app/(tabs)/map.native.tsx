@@ -208,14 +208,10 @@ export default function MapScreenNative() {
     void fetchUserLocation();
   }, [fetchUserLocation]);
 
-  const shellNote = composeThread
-    ? "Thread modus: tik op pins in volgorde. Tik opnieuw om een moment uit de route te halen."
-    : undefined;
-
   const composerBottom = insets.bottom + 72;
 
   return (
-    <MapScreenShell noteBelowTitle={shellNote}>
+    <MapScreenShell>
       <View style={styles.root}>
         <MapView
           ref={mapRef}
@@ -293,6 +289,10 @@ export default function MapScreenNative() {
               },
             ]}
           >
+            <Text style={[styles.composerThreadHelp, { color: muted }]}>
+              Thread modus: tik op pins in volgorde. Tik opnieuw om een moment uit
+              de route te halen.
+            </Text>
             <Text style={[styles.composerHint, { color: muted }]}>
               Minimaal 2 momenten. Volgorde:{" "}
               <Text style={{ fontWeight: "700", color: surfaceText }}>
@@ -530,6 +530,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
+  },
+  composerThreadHelp: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 10,
   },
   composerHint: {
     fontFamily: FontFamily.body,

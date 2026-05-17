@@ -5,7 +5,7 @@ import { MapScreenShell } from "@/components/map-screen-shell";
 
 export default function MapScreenWeb() {
   return (
-    <MapScreenShell noteBelowTitle="Interactieve kaart staat hier op iOS en Android — op web zie je een voorbeeld.">
+    <MapScreenShell>
       <View style={styles.center}>
         <MapPlaceholder />
       </View>

@@ -236,9 +236,6 @@ export default function AddMomentScreenNative() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.title, { color: textColor }]}>Moment uploaden</Text>
-        <Text style={[styles.sub, { color: muted }]}>Voeg een foto, tekst en locatie toe aan je moment.</Text>
-
         <View style={[styles.card, { backgroundColor: cardBackground, borderColor }]}>
           <Text style={[styles.label, { color: textColor }]}>Foto</Text>
           <Pressable style={[styles.photoButton, { borderColor }]} onPress={pickPhoto}>
@@ -351,8 +348,6 @@ export default function AddMomentScreenNative() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
-  title: { fontFamily: FontFamily.titleBold, fontSize: 24, marginBottom: 6 },
-  sub: { fontFamily: FontFamily.body, fontSize: 15, marginBottom: 18 },
   card: {
     borderRadius: 14,
     borderWidth: 1,
