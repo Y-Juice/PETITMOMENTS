@@ -13,11 +13,11 @@ import {
 } from "react-native";
 import type { MapType } from "react-native-maps";
 import Marker from "react-native-maps/lib/MapMarker";
-import Polyline from "react-native-maps/lib/MapPolyline";
 import MapView from "react-native-maps/lib/MapView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MapScreenShell } from "@/components/map-screen-shell";
+import { ThreadRopeMapLayer } from "@/components/thread-rope-map-layer";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
@@ -29,9 +29,6 @@ import {
   getMomentCoordinates,
 } from "@/utils/moments-map-region";
 import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
-
-const SELECTED_PIN = "#2E7D4A";
-const LINE_COLOR = Brand.primary;
 
 export default function MapScreenNative() {
   const { presentMomentById } = useMomentDetailOverlay();
@@ -77,7 +74,7 @@ export default function MapScreenNative() {
     "background",
   );
 
-  const polylineCoordinates = useMemo(() => {
+  const threadWaypoints = useMemo(() => {
     return selectedMomentIds
       .map((id) => moments.find((m) => m.id === id))
       .filter(Boolean)
@@ -85,6 +82,28 @@ export default function MapScreenNative() {
         latitude: m!.location.latitude,
         longitude: m!.location.longitude,
       }));
+  }, [selectedMomentIds, moments]);
+
+  const threadRouteStops = useMemo(() => {
+    return selectedMomentIds
+      .map((id, index) => {
+        const moment = moments.find((m) => m.id === id);
+        if (!moment) return null;
+        return {
+          id: moment.id,
+          title: moment.title,
+          order: index + 1,
+          latitude: moment.location.latitude,
+          longitude: moment.location.longitude,
+        };
+      })
+      .filter(Boolean) as {
+      id: string;
+      title: string;
+      order: number;
+      latitude: number;
+      longitude: number;
+    }[];
   }, [selectedMomentIds, moments]);
 
   const exitCompose = useCallback(() => {
@@ -137,7 +156,7 @@ export default function MapScreenNative() {
       await refreshThreads();
       Alert.alert(
         "Opgeslagen",
-        "Je thread staat bij Discussies op de homepagina.",
+        "Je rode draad staat bij Discussies op de homepagina.",
       );
       exitCompose();
     } finally {
@@ -149,7 +168,7 @@ export default function MapScreenNative() {
     if (moments.length < 2) {
       Alert.alert(
         "Niet genoeg momenten",
-        "Er moeten minstens twee momenten op de kaart staan om een thread te maken.",
+        "Er moeten minstens twee momenten op de kaart staan om een rode draad te maken.",
       );
       return;
     }
@@ -226,13 +245,12 @@ export default function MapScreenNative() {
         >
           {moments.map((moment) => {
             const selected = selectedMomentIds.includes(moment.id);
+            if (composeThread && selected) {
+              return null;
+            }
             return (
               <Marker
-                key={
-                  composeThread
-                    ? `${moment.id}-${selected ? "in" : "out"}`
-                    : moment.id
-                }
+                key={moment.id}
                 coordinate={{
                   latitude: moment.location.latitude,
                   longitude: moment.location.longitude,
@@ -240,18 +258,10 @@ export default function MapScreenNative() {
                 title={moment.title}
                 description={
                   composeThread
-                    ? selected
-                      ? `In route (${selectedMomentIds.indexOf(moment.id) + 1})`
-                      : "Tik om toe te voegen"
+                    ? "Tik om toe te voegen aan de rode draad"
                     : `${moment.username} · ${moment.location.label}`
                 }
-                pinColor={
-                  composeThread
-                    ? selected
-                      ? SELECTED_PIN
-                      : Brand.primary
-                    : undefined
-                }
+                pinColor={composeThread ? Brand.primary : undefined}
                 tracksViewChanges={false}
                 onPress={
                   composeThread
@@ -270,11 +280,11 @@ export default function MapScreenNative() {
               tracksViewChanges={false}
             />
           ) : null}
-          {composeThread && polylineCoordinates.length >= 2 ? (
-            <Polyline
-              coordinates={polylineCoordinates}
-              strokeColor={LINE_COLOR}
-              strokeWidth={3}
+          {composeThread ? (
+            <ThreadRopeMapLayer
+              waypoints={threadWaypoints}
+              stops={threadRouteStops}
+              onStopPress={onToggleMomentInThread}
             />
           ) : null}
         </MapView>
@@ -290,8 +300,8 @@ export default function MapScreenNative() {
             ]}
           >
             <Text style={[styles.composerThreadHelp, { color: muted }]}>
-              Thread modus: tik op pins in volgorde. Tik opnieuw om een moment
-              uit de route te halen.
+              Rode draad: tik op pins in volgorde. Genummerde markers tonen je
+              route. Tik opnieuw om een moment te verwijderen.
             </Text>
             <Text style={[styles.composerHint, { color: muted }]}>
               Minimaal 2 momenten. Volgorde:{" "}
@@ -371,7 +381,7 @@ export default function MapScreenNative() {
             <Text
               style={[styles.locationButtonText, { color: buttonTextColor }]}
             >
-              {composeThread ? "Stop thread" : "Thread maken"}
+              {composeThread ? "Stop rode draad" : "Rode draad"}
             </Text>
           </Pressable>
 
