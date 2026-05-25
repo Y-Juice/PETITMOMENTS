@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,6 +19,7 @@ import MapView from "react-native-maps/lib/MapView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MapScreenShell } from "@/components/map-screen-shell";
+import { ThreadNumberedMarker } from "@/components/thread-numbered-marker";
 import { ThreadRopeMapLayer } from "@/components/thread-rope-map-layer";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
@@ -48,6 +51,7 @@ export default function MapScreenNative() {
   const [threadTitle, setThreadTitle] = useState("");
   const [savingThread, setSavingThread] = useState(false);
   const [mapViewType, setMapViewType] = useState<MapType>("standard");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const coordinates = useMemo(() => getMomentCoordinates(moments), [moments]);
   const mapCoordinates = useMemo(() => {
@@ -82,28 +86,6 @@ export default function MapScreenNative() {
         latitude: m!.location.latitude,
         longitude: m!.location.longitude,
       }));
-  }, [selectedMomentIds, moments]);
-
-  const threadRouteStops = useMemo(() => {
-    return selectedMomentIds
-      .map((id, index) => {
-        const moment = moments.find((m) => m.id === id);
-        if (!moment) return null;
-        return {
-          id: moment.id,
-          title: moment.title,
-          order: index + 1,
-          latitude: moment.location.latitude,
-          longitude: moment.location.longitude,
-        };
-      })
-      .filter(Boolean) as {
-      id: string;
-      title: string;
-      order: number;
-      latitude: number;
-      longitude: number;
-    }[];
   }, [selectedMomentIds, moments]);
 
   const exitCompose = useCallback(() => {
@@ -227,7 +209,26 @@ export default function MapScreenNative() {
     void fetchUserLocation();
   }, [fetchUserLocation]);
 
-  const composerBottom = insets.bottom + 12;
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const onShow = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const onHide = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
+
+  const composerBottom = insets.bottom + keyboardHeight + 12;
 
   return (
     <MapScreenShell>
@@ -244,17 +245,30 @@ export default function MapScreenNative() {
           showsScale
         >
           {moments.map((moment) => {
-            const selected = selectedMomentIds.includes(moment.id);
+            const selectedIndex = selectedMomentIds.indexOf(moment.id);
+            const selected = selectedIndex >= 0;
+            const coordinate = {
+              latitude: moment.location.latitude,
+              longitude: moment.location.longitude,
+            };
+
             if (composeThread && selected) {
-              return null;
+              return (
+                <ThreadNumberedMarker
+                  key={`thread-pin-${moment.id}-${selectedIndex + 1}`}
+                  coordinate={coordinate}
+                  order={selectedIndex + 1}
+                  title={moment.title}
+                  description="Tik om uit de route te halen"
+                  onPress={() => onToggleMomentInThread(moment.id)}
+                />
+              );
             }
+
             return (
               <Marker
                 key={moment.id}
-                coordinate={{
-                  latitude: moment.location.latitude,
-                  longitude: moment.location.longitude,
-                }}
+                coordinate={coordinate}
                 title={moment.title}
                 description={
                   composeThread
@@ -281,11 +295,7 @@ export default function MapScreenNative() {
             />
           ) : null}
           {composeThread ? (
-            <ThreadRopeMapLayer
-              waypoints={threadWaypoints}
-              stops={threadRouteStops}
-              onStopPress={onToggleMomentInThread}
-            />
+            <ThreadRopeMapLayer waypoints={threadWaypoints} />
           ) : null}
         </MapView>
 
@@ -319,6 +329,8 @@ export default function MapScreenNative() {
                 { color: surfaceText, backgroundColor: inputBg },
               ]}
               editable={!savingThread}
+              returnKeyType="done"
+              blurOnSubmit
             />
             <View style={styles.composerActions}>
               <Pressable
@@ -361,30 +373,6 @@ export default function MapScreenNative() {
         ) : null}
 
         <View style={styles.controls}>
-          <Pressable
-            onPress={composeThread ? exitCompose : startCompose}
-            style={({ pressed }) => [
-              styles.threadModeButton,
-              {
-                backgroundColor: composeThread ? Brand.neutral : buttonColor,
-              },
-              pressed && styles.pressedBtn,
-              moments.length < 2 && !composeThread && styles.disabledBtn,
-            ]}
-            disabled={!composeThread && moments.length < 2}
-          >
-            <MaterialIcons
-              name={composeThread ? "close" : "timeline"}
-              size={18}
-              color={buttonTextColor}
-            />
-            <Text
-              style={[styles.locationButtonText, { color: buttonTextColor }]}
-            >
-              {composeThread ? "Stop rode draad" : "Rode draad"}
-            </Text>
-          </Pressable>
-
           <View style={styles.toolRow}>
             <Pressable
               onPress={fitMap}
@@ -425,6 +413,30 @@ export default function MapScreenNative() {
               />
             </Pressable>
           </View>
+
+          <Pressable
+            onPress={composeThread ? exitCompose : startCompose}
+            style={({ pressed }) => [
+              styles.threadModeButton,
+              {
+                backgroundColor: composeThread ? Brand.neutral : buttonColor,
+              },
+              pressed && styles.pressedBtn,
+              moments.length < 2 && !composeThread && styles.disabledBtn,
+            ]}
+            disabled={!composeThread && moments.length < 2}
+          >
+            <MaterialIcons
+              name={composeThread ? "close" : "timeline"}
+              size={18}
+              color={buttonTextColor}
+            />
+            <Text
+              style={[styles.locationButtonText, { color: buttonTextColor }]}
+            >
+              {composeThread ? "Stop rode draad" : "Rode draad"}
+            </Text>
+          </Pressable>
 
           <Pressable
             onPress={() => void fetchUserLocation()}

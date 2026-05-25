@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import Marker from 'react-native-maps/lib/MapMarker';
 
 import { Brand } from '@/constants/theme';
@@ -21,16 +22,24 @@ export function ThreadNumberedMarker({
   description,
   onPress,
 }: ThreadNumberedMarkerProps) {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    setTracksViewChanges(true);
+    const timer = setTimeout(() => setTracksViewChanges(false), 400);
+    return () => clearTimeout(timer);
+  }, [order, title]);
+
   return (
     <Marker
       coordinate={coordinate}
       title={title}
       description={description}
       anchor={{ x: 0.5, y: 1 }}
-      tracksViewChanges={false}
+      tracksViewChanges={tracksViewChanges}
       onPress={onPress}
     >
-      <View style={styles.wrap}>
+      <View style={styles.wrap} collapsable={false}>
         <View style={styles.pinHead}>
           <View style={styles.pinHighlight} />
           <Text style={styles.pinNumber}>{order}</Text>
@@ -47,6 +56,7 @@ const NEEDLE = '#8A8A8A';
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
+    ...(Platform.OS === 'android' ? { width: 30, height: 40 } : {}),
   },
   pinHead: {
     width: 26,
@@ -62,7 +72,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 2,
     elevation: 4,
-    zIndex: 2,
   },
   pinHighlight: {
     position: 'absolute',
