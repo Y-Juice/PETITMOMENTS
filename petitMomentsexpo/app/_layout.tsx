@@ -6,9 +6,11 @@ import { useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
+import { AdminProvider } from '@/contexts/admin-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { MomentDetailOverlayProvider } from '@/contexts/moment-detail-overlay-context';
 import { MomentsProvider } from '@/contexts/moments-context';
+import { ReportsProvider } from '@/contexts/reports-context';
 import { SavesProvider } from '@/contexts/saves-context';
 import { ThreadsProvider } from '@/contexts/threads-context';
 import { VotesProvider } from '@/contexts/votes-context';
@@ -54,6 +56,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
+        <ReportsProvider>
+        <AdminProvider>
         <SavesProvider>
           <VotesProvider>
             <MomentsProvider>
@@ -65,6 +69,7 @@ export default function RootLayout() {
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                       <Stack.Screen name="terms" options={{ headerShown: false }} />
+                      <Stack.Screen name="admin" options={{ headerShown: false }} />
                       <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
                     </Stack>
                     <StatusBar style="auto" />
@@ -75,6 +80,8 @@ export default function RootLayout() {
             </MomentsProvider>
           </VotesProvider>
         </SavesProvider>
+        </AdminProvider>
+        </ReportsProvider>
       </AuthProvider>
     </ThemeProvider>
   );

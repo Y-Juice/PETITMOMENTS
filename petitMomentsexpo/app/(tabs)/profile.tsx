@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ import { VotedItemsList } from '@/components/voted-items-list';
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
+import { useAdmin } from '@/contexts/admin-context';
 import { useMoments } from '@/contexts/moments-context';
 import type { Moment } from '@/data/mockMoments';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -30,7 +32,9 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { session, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { moments, updateMoment, deleteMoment } = useMoments();
   const [signingOut, setSigningOut] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('created');
@@ -226,6 +230,18 @@ export default function ProfileScreen() {
         <Text style={[styles.emailLabel, { color: muted }]}>Ingelogd als</Text>
         <Text style={[styles.email, { color: textColor }]}>{email || '—'}</Text>
 
+        {isAdmin ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.adminBtn,
+              { backgroundColor: tint },
+              pressed && styles.pressedBtn,
+            ]}
+            onPress={() => router.push('/admin' as Href)}>
+            <Text style={styles.adminBtnText}>Moderatie dashboard</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [
             styles.signOutBtn,
@@ -289,6 +305,23 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 17,
     marginBottom: 20,
+  },
+  adminBtn: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    marginBottom: 12,
+  },
+  adminBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  pressedBtn: {
+    opacity: 0.88,
   },
   signOutBtn: {
     borderWidth: StyleSheet.hairlineWidth + 1,

@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { VoteWidget } from "@/components/vote-widget";
+import { ContentWarningBadge } from "@/components/content-warning-gate";
+import { hasContentWarning } from "@/data/moderation";
 import { getMomentCardColors } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useVotes } from "@/contexts/votes-context";
@@ -47,6 +49,9 @@ export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
           >
             {moment.title}
           </Text>
+          {hasContentWarning(moment) ? (
+            <ContentWarningBadge labels={moment.contentWarning} />
+          ) : null}
           <Text style={[styles.subtitle, { color: colors.sub }]}>
             {moment.username}, {moment.location.label}
           </Text>

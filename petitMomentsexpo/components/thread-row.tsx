@@ -3,6 +3,9 @@ import { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { VoteWidget } from '@/components/vote-widget'
+import { ContentWarningBadge, ContentWarningGate } from '@/components/content-warning-gate'
+import { ReportContentButton } from '@/components/report-content-button'
+import { hasContentWarning } from '@/data/moderation'
 import type { ThreadItem } from '@/contexts/threads-context'
 import { useSaves } from '@/contexts/saves-context'
 import { useVotes } from '@/contexts/votes-context'
@@ -40,7 +43,13 @@ export function ThreadRow({ thread }: Props) {
         <Text style={[styles.title, { color: textColor }]} numberOfLines={2}>
           {thread.title}
         </Text>
-        <Pressable
+        <View style={styles.headerActions}>
+          <ReportContentButton
+            targetType="thread"
+            targetId={thread.id}
+            targetLabel={thread.title}
+          />
+          <Pressable
           onPress={() => void onPressSave()}
           disabled={busy}
           style={({ pressed }) => [
@@ -64,7 +73,12 @@ export function ThreadRow({ thread }: Props) {
             />
           )}
         </Pressable>
+        </View>
       </View>
+
+      {hasContentWarning(thread) ? (
+        <ContentWarningBadge labels={thread.contentWarning} />
+      ) : null}
 
       {thread.momentIds?.length ? (
         <Text style={[styles.meta, { color: muted }]}>
@@ -72,9 +86,17 @@ export function ThreadRow({ thread }: Props) {
         </Text>
       ) : null}
       {preview ? (
-        <Text style={[styles.body, { color: muted }]} numberOfLines={3}>
-          {preview}
-        </Text>
+        hasContentWarning(thread) ? (
+          <ContentWarningGate item={thread}>
+            <Text style={[styles.body, { color: muted }]} numberOfLines={3}>
+              {preview}
+            </Text>
+          </ContentWarningGate>
+        ) : (
+          <Text style={[styles.body, { color: muted }]} numberOfLines={3}>
+            {preview}
+          </Text>
+        )
       ) : null}
 
       <View style={styles.footerRow}>
@@ -111,6 +133,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.titleBold,
     fontSize: 16,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   saveBtn: {
     width: 36,

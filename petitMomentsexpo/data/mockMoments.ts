@@ -2,6 +2,11 @@
  * Mock moments: personal stories tied to places. `description` and `imageUrl` are for the detail screen.
  */
 
+import type {
+  ContentWarningLabel,
+  ModerationStatus,
+} from '@/data/moderation';
+
 export type MomentLocation = {
   /** Short label for lists (e.g. distance or neighbourhood). */
   label: string;
@@ -24,6 +29,9 @@ export type Moment = {
   ownerId?: string | null;
   /** True = zichtbaar voor iedereen, false = alleen voor de eigenaar. */
   isPublic?: boolean;
+  /** Waarschuwingen van moderator of eigenaar. */
+  contentWarning?: ContentWarningLabel[];
+  moderationStatus?: ModerationStatus;
 };
 
 export const MOCK_MOMENTS: Moment[] = [

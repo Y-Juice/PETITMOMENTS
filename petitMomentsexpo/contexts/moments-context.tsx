@@ -9,10 +9,15 @@ import React, {
 
 import { useAuth } from "@/contexts/auth-context";
 import type { Moment } from "@/data/mockMoments";
+import { isContentHiddenFromViewer } from "@/data/moderation";
 import {
   deleteMomentInSupabase,
   updateMomentInSupabase,
 } from "@/utils/moments-supabase";
+import {
+  parseContentWarnings,
+  parseModerationStatus,
+} from "@/utils/moderation-parse";
 import { supabase } from "@/utils/supabase";
 
 type CreateMomentInput = {
@@ -200,6 +205,8 @@ function rowToMoment(
     scoreDirection: "up",
     ownerId,
     isPublic,
+    contentWarning: parseContentWarnings(row.content_warning),
+    moderationStatus: parseModerationStatus(row.moderation_status),
   };
 }
 
@@ -219,7 +226,7 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
     const withCoords = await supabase
       .from("moments")
       .select(
-        "id, user_id, is_public, caption, address, media_url, created_at, location, latitude:ST_Y(location::geometry), longitude:ST_X(location::geometry)",
+        "id, user_id, is_public, content_warning, moderation_status, caption, address, media_url, created_at, location, latitude:ST_Y(location::geometry), longitude:ST_X(location::geometry)",
       )
       .order("created_at", { ascending: false });
 
@@ -232,7 +239,7 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
       const simple = await supabase
         .from("moments")
         .select(
-          "id, user_id, is_public, caption, address, media_url, location, created_at",
+          "id, user_id, is_public, content_warning, moderation_status, caption, address, media_url, location, created_at",
         )
         .order("created_at", { ascending: false });
 
@@ -399,9 +406,13 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
   const currentUserId = session?.user?.id ?? null;
   const visibleMoments = useMemo(
     () =>
-      moments.filter(
-        (m) => m.isPublic !== false || (currentUserId && m.ownerId === currentUserId),
-      ),
+      moments.filter((m) => {
+        if (isContentHiddenFromViewer(m, currentUserId)) return false;
+        return (
+          m.isPublic !== false ||
+          (currentUserId && m.ownerId === currentUserId)
+        );
+      }),
     [moments, currentUserId],
   );
 

@@ -23,6 +23,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VoteWidget } from '@/components/vote-widget';
+import { ContentWarningGate } from '@/components/content-warning-gate';
+import { ReportContentButton } from '@/components/report-content-button';
+import { hasContentWarning } from '@/data/moderation';
 import { FontFamily } from '@/constants/typography';
 import { useMoments } from '@/contexts/moments-context';
 import { useSaves } from '@/contexts/saves-context';
@@ -162,6 +165,12 @@ export function MomentDetailOverlayProvider({
                     <View style={styles.card}>
                       <View style={styles.titleRow}>
                         <Text style={styles.title}>{moment.title}</Text>
+                        <ReportContentButton
+                          targetType="moment"
+                          targetId={moment.id}
+                          targetLabel={moment.title}
+                          iconColor="#FFFFFF"
+                        />
                       </View>
 
                       {voteSummary ? (
@@ -178,25 +187,49 @@ export function MomentDetailOverlayProvider({
                         </View>
                       ) : null}
 
-                      {moment.imageUrl ? (
-                        <Image
-                          source={{ uri: moment.imageUrl }}
-                          style={styles.photo}
-                          contentFit="cover"
-                          transition={200}
-                        />
+                      {hasContentWarning(moment) ? (
+                        <ContentWarningGate item={moment} style={styles.warningBlock}>
+                          {moment.imageUrl ? (
+                            <Image
+                              source={{ uri: moment.imageUrl }}
+                              style={styles.photo}
+                              contentFit="cover"
+                              transition={200}
+                            />
+                          ) : (
+                            <View style={styles.photoPlaceholder}>
+                              <MaterialIcons
+                                name="image-not-supported"
+                                size={40}
+                                color="rgba(255,255,255,0.5)"
+                              />
+                              <Text style={styles.photoPlaceholderText}>Geen foto</Text>
+                            </View>
+                          )}
+                          <Text style={styles.description}>{moment.description}</Text>
+                        </ContentWarningGate>
                       ) : (
-                        <View style={styles.photoPlaceholder}>
-                          <MaterialIcons
-                            name="image-not-supported"
-                            size={40}
-                            color="rgba(255,255,255,0.5)"
-                          />
-                          <Text style={styles.photoPlaceholderText}>Geen foto</Text>
-                        </View>
+                        <>
+                          {moment.imageUrl ? (
+                            <Image
+                              source={{ uri: moment.imageUrl }}
+                              style={styles.photo}
+                              contentFit="cover"
+                              transition={200}
+                            />
+                          ) : (
+                            <View style={styles.photoPlaceholder}>
+                              <MaterialIcons
+                                name="image-not-supported"
+                                size={40}
+                                color="rgba(255,255,255,0.5)"
+                              />
+                              <Text style={styles.photoPlaceholderText}>Geen foto</Text>
+                            </View>
+                          )}
+                          <Text style={styles.description}>{moment.description}</Text>
+                        </>
                       )}
-
-                      <Text style={styles.description}>{moment.description}</Text>
 
                       <Pressable
                         onPress={() => void onToggleSave()}
@@ -372,7 +405,12 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  photoGate: {
     marginBottom: 22,
+  },
+  warningBlock: {
+    marginBottom: 18,
   },
   photoPlaceholder: {
     width: '100%',

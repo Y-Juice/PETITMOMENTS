@@ -1,6 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@/contexts/auth-context'
+import type { ContentWarningLabel, ModerationStatus } from '@/data/moderation'
+import { isContentHiddenFromViewer } from '@/data/moderation'
+import {
+  parseContentWarnings,
+  parseModerationStatus,
+} from '@/utils/moderation-parse'
 import { supabase } from '@/utils/supabase'
 
 export type ThreadItem = {
@@ -10,6 +16,9 @@ export type ThreadItem = {
   createdAt: string
   /** Gekoppelde momenten (als de kolom moment_ids in de database bestaat). */
   momentIds?: string[]
+  ownerId?: string | null
+  contentWarning?: ContentWarningLabel[]
+  moderationStatus?: ModerationStatus
 }
 
 type ThreadsContextValue = {
@@ -70,12 +79,22 @@ function rowToThread(row: Record<string, unknown>): ThreadItem {
         ? createdRaw.toISOString()
         : ''
 
+  const ownerId =
+    typeof row.user_id === 'string'
+      ? row.user_id
+      : typeof row.created_by === 'string'
+        ? row.created_by
+        : null
+
   return {
     id: String(row.id ?? Date.now()),
     title,
     body,
     createdAt,
     momentIds: momentIdsFromRow(row),
+    ownerId,
+    contentWarning: parseContentWarnings(row.content_warning),
+    moderationStatus: parseModerationStatus(row.moderation_status),
   }
 }
 
@@ -91,6 +110,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
 
     const selectVariants = [
+      'id, title, description, created_at, user_id, content_warning, moderation_status, thread_moments(moment_id, order_index)',
+      'id, title, description, created_at, created_by, content_warning, moderation_status, thread_moments(moment_id, order_index)',
       'id, title, description, created_at, thread_moments(moment_id, order_index)',
       'id, title, description, created_at, thread_moments(moment_id, order_index, added_by)',
       'id, title, description, created_at, thread_moments(moment_id, position)',
@@ -150,6 +171,13 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }, [])
 
+  const currentUserId = session?.user?.id ?? null
+  const visibleThreads = useMemo(
+    () =>
+      threads.filter((thread) => !isContentHiddenFromViewer(thread, currentUserId)),
+    [threads, currentUserId],
+  )
+
   useEffect(() => {
     if (authLoading) {
       return
@@ -195,14 +223,14 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<ThreadsContextValue>(
     () => ({
-      threads,
+      threads: visibleThreads,
       loading,
       loadError,
       refreshThreads: async () => {
         await loadThreads()
       },
     }),
-    [threads, loading, loadError, loadThreads]
+    [visibleThreads, loading, loadError, loadThreads]
   )
 
   return <ThreadsContext.Provider value={value}>{children}</ThreadsContext.Provider>
