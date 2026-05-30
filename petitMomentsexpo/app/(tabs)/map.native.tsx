@@ -1,5 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Location from "expo-location";
+import { useLocalSearchParams } from "expo-router";
 import type { ComponentRef } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -35,10 +36,12 @@ import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
 
 export default function MapScreenNative() {
   const { presentMomentById } = useMomentDetailOverlay();
+  const params = useLocalSearchParams<{ threadId?: string; ts?: string }>();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
   const { moments } = useMoments();
-  const { refreshThreads } = useThreads();
+  const { threads, refreshThreads } = useThreads();
+  const [viewThreadId, setViewThreadId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -49,6 +52,7 @@ export default function MapScreenNative() {
   const [composeThread, setComposeThread] = useState(false);
   const [selectedMomentIds, setSelectedMomentIds] = useState<string[]>([]);
   const [threadTitle, setThreadTitle] = useState("");
+  const [threadDescription, setThreadDescription] = useState("");
   const [savingThread, setSavingThread] = useState(false);
   const [mapViewType, setMapViewType] = useState<MapType>("standard");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -88,10 +92,43 @@ export default function MapScreenNative() {
       }));
   }, [selectedMomentIds, moments]);
 
+  const viewThread = useMemo(
+    () => threads.find((t) => t.id === viewThreadId),
+    [threads, viewThreadId],
+  );
+
+  const viewRouteStops = useMemo(() => {
+    if (!viewThread?.momentIds) return [];
+    return viewThread.momentIds
+      .map((id) => moments.find((m) => m.id === id))
+      .filter(Boolean)
+      .map((m, index) => ({
+        id: m!.id,
+        title: m!.title,
+        order: index + 1,
+        latitude: m!.location.latitude,
+        longitude: m!.location.longitude,
+      }));
+  }, [viewThread, moments]);
+
+  const viewWaypoints = useMemo(
+    () =>
+      viewRouteStops.map((stop) => ({
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+      })),
+    [viewRouteStops],
+  );
+
+  const clearViewThread = useCallback(() => {
+    setViewThreadId(null);
+  }, []);
+
   const exitCompose = useCallback(() => {
     setComposeThread(false);
     setSelectedMomentIds([]);
     setThreadTitle("");
+    setThreadDescription("");
   }, []);
 
   const onToggleMomentInThread = useCallback((momentId: string) => {
@@ -130,6 +167,7 @@ export default function MapScreenNative() {
         title: threadTitle,
         orderedMomentIds: selectedMomentIds,
         contentSummary,
+        description: threadDescription,
       });
       if (error) {
         Alert.alert("Opslaan mislukt", error);
@@ -144,7 +182,14 @@ export default function MapScreenNative() {
     } finally {
       setSavingThread(false);
     }
-  }, [selectedMomentIds, moments, threadTitle, refreshThreads, exitCompose]);
+  }, [
+    selectedMomentIds,
+    moments,
+    threadTitle,
+    threadDescription,
+    refreshThreads,
+    exitCompose,
+  ]);
 
   const startCompose = useCallback(() => {
     if (moments.length < 2) {
@@ -154,9 +199,11 @@ export default function MapScreenNative() {
       );
       return;
     }
+    setViewThreadId(null);
     setComposeThread(true);
     setSelectedMomentIds([]);
     setThreadTitle("");
+    setThreadDescription("");
   }, [moments.length]);
 
   const fitMap = useCallback(() => {
@@ -208,6 +255,24 @@ export default function MapScreenNative() {
   useEffect(() => {
     void fetchUserLocation();
   }, [fetchUserLocation]);
+
+  useEffect(() => {
+    if (params.threadId) {
+      setComposeThread(false);
+      setViewThreadId(String(params.threadId));
+    }
+  }, [params.threadId, params.ts]);
+
+  useEffect(() => {
+    if (!viewThreadId || viewWaypoints.length < 1) return;
+    const id = requestAnimationFrame(() => {
+      mapRef.current?.fitToCoordinates(viewWaypoints, {
+        edgePadding: { top: 130, right: 40, bottom: 160, left: 40 },
+        animated: true,
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [viewThreadId, viewWaypoints]);
 
   useEffect(() => {
     const showEvent =
@@ -295,7 +360,47 @@ export default function MapScreenNative() {
           {composeThread ? (
             <ThreadRopeMapLayer waypoints={threadWaypoints} />
           ) : null}
+          {!composeThread && viewThreadId ? (
+            <ThreadRopeMapLayer
+              waypoints={viewWaypoints}
+              stops={viewRouteStops}
+              onStopPress={(id) => presentMomentById(id)}
+            />
+          ) : null}
         </MapView>
+
+        {!composeThread && viewThread ? (
+          <View
+            style={[
+              styles.viewBanner,
+              { backgroundColor: panelBg, top: insets.top + 12 },
+            ]}
+          >
+            <MaterialIcons name="timeline" size={20} color={Brand.primary} />
+            <View style={styles.viewBannerText}>
+              <Text
+                style={[styles.viewBannerTitle, { color: surfaceText }]}
+                numberOfLines={1}
+              >
+                {viewThread.title}
+              </Text>
+              <Text style={[styles.viewBannerMeta, { color: muted }]}>
+                Rode draad · {viewRouteStops.length} momenten
+              </Text>
+            </View>
+            <Pressable
+              onPress={clearViewThread}
+              style={({ pressed }) => [
+                styles.viewBannerClose,
+                pressed && styles.pressedBtn,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Sluit deze rode draad"
+            >
+              <MaterialIcons name="close" size={20} color={surfaceText} />
+            </Pressable>
+          </View>
+        ) : null}
 
         {composeThread ? (
           <View
@@ -329,6 +434,19 @@ export default function MapScreenNative() {
               editable={!savingThread}
               returnKeyType="done"
               blurOnSubmit
+            />
+            <TextInput
+              value={threadDescription}
+              onChangeText={setThreadDescription}
+              placeholder="Korte omschrijving (optioneel)"
+              placeholderTextColor={muted}
+              style={[
+                styles.descriptionInput,
+                { color: surfaceText, backgroundColor: inputBg },
+              ]}
+              editable={!savingThread}
+              multiline
+              maxLength={280}
             />
             <View style={styles.composerActions}>
               <Pressable
@@ -541,6 +659,44 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: "right",
   },
+  viewBanner: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(196, 69, 54, 0.3)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 1000,
+  },
+  viewBannerText: {
+    flex: 1,
+  },
+  viewBannerTitle: {
+    fontFamily: FontFamily.titleBold,
+    fontSize: 15,
+  },
+  viewBannerMeta: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  viewBannerClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   threadComposer: {
     position: "absolute",
     left: 14,
@@ -573,7 +729,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    marginBottom: 10,
+  },
+  descriptionInput: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 12,
+    minHeight: 64,
+    textAlignVertical: "top",
   },
   composerActions: {
     flexDirection: "row",

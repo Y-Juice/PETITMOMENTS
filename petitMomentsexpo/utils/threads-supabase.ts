@@ -4,6 +4,8 @@ export type InsertThreadFromMapInput = {
   title: string;
   orderedMomentIds: string[];
   contentSummary: string;
+  /** Korte omschrijving die de gebruiker zelf typt. Valt terug op de route. */
+  description?: string;
 };
 
 type InsertThreadResult = {
@@ -134,7 +136,8 @@ export async function insertThreadFromMapInSupabase(
   const userId = authData.user.id;
   const title =
     input.title.trim() || `Thread (${input.orderedMomentIds.length} momenten)`;
-  const description = input.contentSummary;
+  const userDescription = input.description?.trim() ?? "";
+  const description = userDescription || input.contentSummary;
 
   /** Volgorde: petitMoments DB (threads + thread_moments), daarna oudere varianten. */
   const threadPayloads: Record<string, unknown>[] = [

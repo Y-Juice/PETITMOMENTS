@@ -13,6 +13,7 @@ import { MomentsProvider } from '@/contexts/moments-context';
 import { OnboardingProvider } from '@/contexts/onboarding-context';
 import { ReportsProvider } from '@/contexts/reports-context';
 import { SavesProvider } from '@/contexts/saves-context';
+import { ThreadDetailOverlayProvider } from '@/contexts/thread-detail-overlay-context';
 import { ThreadsProvider } from '@/contexts/threads-context';
 import { VotesProvider } from '@/contexts/votes-context';
 import { useAppFonts } from '@/hooks/use-app-fonts';
@@ -65,6 +66,7 @@ export default function RootLayout() {
             <MomentsProvider>
               <MomentDetailOverlayProvider>
                 <ThreadsProvider>
+                <ThreadDetailOverlayProvider>
                 {appReady ? (
                   <>
                     <Stack>
@@ -79,6 +81,7 @@ export default function RootLayout() {
                     <StatusBar style="auto" />
                   </>
                 ) : null}
+                </ThreadDetailOverlayProvider>
                 </ThreadsProvider>
               </MomentDetailOverlayProvider>
             </MomentsProvider>
