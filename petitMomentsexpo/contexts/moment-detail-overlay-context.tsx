@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { setStatusBarStyle } from "expo-status-bar";
 import React, {
     createContext,
@@ -51,6 +52,7 @@ export function MomentDetailOverlayProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [savingToggle, setSavingToggle] = useState(false);
   const visible = openId !== null;
@@ -105,6 +107,16 @@ export function MomentDetailOverlayProvider({
     await toggleMomentSave(moment.id);
     setSavingToggle(false);
   }, [moment, savingToggle, toggleMomentSave]);
+
+  const onFollowOnMap = useCallback(() => {
+    if (!moment) return;
+    feedbackSelectionTap();
+    dismiss();
+    router.push({
+      pathname: "/map",
+      params: { followMomentId: moment.id, ts: String(Date.now()) },
+    });
+  }, [moment, dismiss, router]);
 
   return (
     <MomentDetailOverlayContext.Provider value={value}>
@@ -268,6 +280,23 @@ export function MomentDetailOverlayProvider({
                           </Text>
                         </>
                       )}
+
+                      <Pressable
+                        onPress={onFollowOnMap}
+                        style={({ pressed }) => [
+                          styles.followBtn,
+                          pressed && styles.followBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volg dit moment op de kaart met je locatie"
+                      >
+                        <MaterialIcons
+                          name="navigation"
+                          size={20}
+                          color={CARD_BG}
+                        />
+                        <Text style={styles.followBtnText}>Volg op kaart</Text>
+                      </Pressable>
 
                       <Pressable
                         onPress={() => void onToggleSave()}
@@ -476,6 +505,27 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     color: "#FFFFFF",
     marginBottom: 18,
+  },
+  followBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    marginBottom: 14,
+    minHeight: 48,
+  },
+  followBtnPressed: {
+    opacity: 0.85,
+  },
+  followBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    fontWeight: "700",
+    color: CARD_BG,
   },
   saveBtn: {
     alignSelf: "flex-start",

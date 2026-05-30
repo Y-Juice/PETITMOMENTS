@@ -118,6 +118,16 @@ export function ThreadDetailOverlayProvider({
     });
   }, [thread, dismiss, router]);
 
+  const onFollowRoute = useCallback(() => {
+    if (!thread) return;
+    feedbackSelectionTap();
+    dismiss();
+    router.push({
+      pathname: "/map",
+      params: { followThreadId: thread.id, ts: String(Date.now()) },
+    });
+  }, [thread, dismiss, router]);
+
   return (
     <ThreadDetailOverlayContext.Provider value={value}>
       {children}
@@ -297,6 +307,23 @@ export function ThreadDetailOverlayProvider({
                           color={Brand.accent}
                         />
                         <Text style={styles.mapBtnText}>Toon op kaart</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={onFollowRoute}
+                        style={({ pressed }) => [
+                          styles.followBtn,
+                          pressed && styles.mapBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volg deze route met je locatie"
+                      >
+                        <MaterialIcons
+                          name="navigation"
+                          size={20}
+                          color="#FFFFFF"
+                        />
+                        <Text style={styles.followBtnText}>Volg route</Text>
                       </Pressable>
 
                       <Pressable
@@ -521,6 +548,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: Brand.accent,
+  },
+  followBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    marginBottom: 14,
+    minHeight: 48,
+  },
+  followBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   saveBtn: {
     alignSelf: "flex-start",

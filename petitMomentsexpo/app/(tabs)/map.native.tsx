@@ -28,20 +28,40 @@ import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context
 import { useMoments } from "@/contexts/moments-context";
 import { useThreads } from "@/contexts/threads-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { feedbackSelectionTap } from "@/utils/feedback";
+import {
+  bearingDegrees,
+  compassLabel,
+  distanceMeters,
+  formatDistance,
+} from "@/utils/geo";
 import {
   getInitialRegionForCoordinates,
   getMomentCoordinates,
 } from "@/utils/moments-map-region";
+import Polyline from "react-native-maps/lib/MapPolyline";
 import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
 
 export default function MapScreenNative() {
   const { presentMomentById } = useMomentDetailOverlay();
-  const params = useLocalSearchParams<{ threadId?: string; ts?: string }>();
+  const params = useLocalSearchParams<{
+    threadId?: string;
+    followThreadId?: string;
+    followMomentId?: string;
+    ts?: string;
+  }>();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ComponentRef<typeof MapView> | null>(null);
+  const watchRef = useRef<Location.LocationSubscription | null>(null);
+  const firstFollowFixRef = useRef(true);
   const { moments } = useMoments();
   const { threads, refreshThreads } = useThreads();
   const [viewThreadId, setViewThreadId] = useState<string | null>(null);
+  const [follow, setFollow] = useState<
+    { kind: "moment"; momentId: string } | { kind: "thread"; threadId: string } | null
+  >(null);
+  const [followStopIndex, setFollowStopIndex] = useState(0);
+  const [followArrived, setFollowArrived] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -124,6 +144,48 @@ export default function MapScreenNative() {
     setViewThreadId(null);
   }, []);
 
+  const followTarget = useMemo<
+    { latitude: number; longitude: number; title: string } | null
+  >(() => {
+    if (!follow) return null;
+    if (follow.kind === "moment") {
+      const m = moments.find((x) => x.id === follow.momentId);
+      return m
+        ? {
+            latitude: m.location.latitude,
+            longitude: m.location.longitude,
+            title: m.title,
+          }
+        : null;
+    }
+    const stop = viewRouteStops[followStopIndex];
+    return stop
+      ? { latitude: stop.latitude, longitude: stop.longitude, title: stop.title }
+      : null;
+  }, [follow, moments, viewRouteStops, followStopIndex]);
+
+  const guidance = useMemo(() => {
+    if (!followTarget || !userLocation) return null;
+    return {
+      distance: distanceMeters(userLocation, followTarget),
+      bearing: bearingDegrees(userLocation, followTarget),
+    };
+  }, [followTarget, userLocation]);
+
+  const stopFollow = useCallback(() => {
+    setFollow(null);
+    setFollowStopIndex(0);
+    setFollowArrived(false);
+    setViewThreadId(null);
+  }, []);
+
+  const advanceFollowStop = useCallback(() => {
+    setFollowStopIndex((prev) =>
+      Math.min(prev + 1, Math.max(0, viewRouteStops.length - 1)),
+    );
+    setFollowArrived(false);
+  }, [viewRouteStops.length]);
+
   const exitCompose = useCallback(() => {
     setComposeThread(false);
     setSelectedMomentIds([]);
@@ -200,6 +262,7 @@ export default function MapScreenNative() {
       return;
     }
     setViewThreadId(null);
+    setFollow(null);
     setComposeThread(true);
     setSelectedMomentIds([]);
     setThreadTitle("");
@@ -259,12 +322,36 @@ export default function MapScreenNative() {
   useEffect(() => {
     if (params.threadId) {
       setComposeThread(false);
+      setFollow(null);
       setViewThreadId(String(params.threadId));
     }
   }, [params.threadId, params.ts]);
 
   useEffect(() => {
-    if (!viewThreadId || viewWaypoints.length < 1) return;
+    if (params.followMomentId) {
+      setComposeThread(false);
+      setViewThreadId(null);
+      setFollowStopIndex(0);
+      setFollowArrived(false);
+      firstFollowFixRef.current = true;
+      setFollow({ kind: "moment", momentId: String(params.followMomentId) });
+    }
+  }, [params.followMomentId, params.ts]);
+
+  useEffect(() => {
+    if (params.followThreadId) {
+      const id = String(params.followThreadId);
+      setComposeThread(false);
+      setViewThreadId(id);
+      setFollowStopIndex(0);
+      setFollowArrived(false);
+      firstFollowFixRef.current = true;
+      setFollow({ kind: "thread", threadId: id });
+    }
+  }, [params.followThreadId, params.ts]);
+
+  useEffect(() => {
+    if (!viewThreadId || follow || viewWaypoints.length < 1) return;
     const id = requestAnimationFrame(() => {
       mapRef.current?.fitToCoordinates(viewWaypoints, {
         edgePadding: { top: 130, right: 40, bottom: 160, left: 40 },
@@ -272,7 +359,76 @@ export default function MapScreenNative() {
       });
     });
     return () => cancelAnimationFrame(id);
-  }, [viewThreadId, viewWaypoints]);
+  }, [viewThreadId, viewWaypoints, follow]);
+
+  useEffect(() => {
+    if (!follow) {
+      watchRef.current?.remove();
+      watchRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setLocationError("Geef locatie-toegang om de route te volgen.");
+        return;
+      }
+      const subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 4,
+          timeInterval: 1500,
+        },
+        (location) => {
+          if (cancelled) return;
+          const next = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          };
+          setUserLocation(next);
+          if (firstFollowFixRef.current) {
+            firstFollowFixRef.current = false;
+            mapRef.current?.animateToRegion(
+              { ...next, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+              450,
+            );
+          }
+        },
+      );
+      if (cancelled) {
+        subscription.remove();
+        return;
+      }
+      watchRef.current = subscription;
+    })();
+
+    return () => {
+      cancelled = true;
+      watchRef.current?.remove();
+      watchRef.current = null;
+    };
+  }, [follow]);
+
+  useEffect(() => {
+    if (!follow || !guidance) return;
+    const ARRIVAL_METERS = 25;
+    if (guidance.distance > ARRIVAL_METERS) {
+      if (followArrived) setFollowArrived(false);
+      return;
+    }
+    if (follow.kind === "thread" && followStopIndex < viewRouteStops.length - 1) {
+      setFollowStopIndex((prev) => prev + 1);
+      feedbackSelectionTap();
+      return;
+    }
+    if (!followArrived) {
+      setFollowArrived(true);
+      feedbackSelectionTap();
+    }
+  }, [follow, guidance, followArrived, followStopIndex, viewRouteStops.length]);
 
   useEffect(() => {
     const showEvent =
@@ -367,9 +523,18 @@ export default function MapScreenNative() {
               onStopPress={(id) => presentMomentById(id)}
             />
           ) : null}
+          {follow && userLocation && followTarget ? (
+            <Polyline
+              coordinates={[userLocation, followTarget]}
+              strokeColor="#1F7AE0"
+              strokeWidth={3}
+              lineDashPattern={[8, 8]}
+              lineCap="round"
+            />
+          ) : null}
         </MapView>
 
-        {!composeThread && viewThread ? (
+        {!composeThread && viewThread && !follow ? (
           <View
             style={[
               styles.viewBanner,
@@ -399,6 +564,82 @@ export default function MapScreenNative() {
             >
               <MaterialIcons name="close" size={20} color={surfaceText} />
             </Pressable>
+          </View>
+        ) : null}
+
+        {follow && followTarget ? (
+          <View
+            style={[
+              styles.followPanel,
+              { backgroundColor: panelBg, top: insets.top + 12 },
+            ]}
+          >
+            <View style={styles.followHeader}>
+              <View style={styles.followArrowWrap}>
+                <MaterialIcons
+                  name="navigation"
+                  size={26}
+                  color="#1F7AE0"
+                  style={
+                    guidance
+                      ? { transform: [{ rotate: `${guidance.bearing}deg` }] }
+                      : undefined
+                  }
+                />
+              </View>
+              <View style={styles.followText}>
+                <Text
+                  style={[styles.followTitle, { color: surfaceText }]}
+                  numberOfLines={1}
+                >
+                  {follow.kind === "thread"
+                    ? `Stap ${followStopIndex + 1} van ${viewRouteStops.length}: ${followTarget.title}`
+                    : followTarget.title}
+                </Text>
+                <Text style={[styles.followMeta, { color: muted }]}>
+                  {guidance
+                    ? followArrived
+                      ? follow.kind === "thread"
+                        ? "Eindpunt bereikt"
+                        : "Je bent er!"
+                      : `${formatDistance(guidance.distance)} · richting ${compassLabel(guidance.bearing)}`
+                    : "Locatie laden..."}
+                </Text>
+              </View>
+              <Pressable
+                onPress={stopFollow}
+                style={({ pressed }) => [
+                  styles.viewBannerClose,
+                  pressed && styles.pressedBtn,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Stop met volgen"
+              >
+                <MaterialIcons name="close" size={20} color={surfaceText} />
+              </Pressable>
+            </View>
+            {follow.kind === "thread" &&
+            followStopIndex < viewRouteStops.length - 1 ? (
+              <Pressable
+                onPress={advanceFollowStop}
+                style={({ pressed }) => [
+                  styles.followStepBtn,
+                  { borderColor: Brand.primary },
+                  pressed && styles.pressedBtn,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Ga naar de volgende stap"
+              >
+                <MaterialIcons
+                  name="skip-next"
+                  size={18}
+                  color={Brand.primary}
+                />
+                <Text style={[styles.followStepText, { color: Brand.primary }]}>
+                  Volgende stap
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
@@ -658,6 +899,62 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 15,
     textAlign: "right",
+  },
+  followPanel: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(31, 122, 224, 0.35)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 1000,
+  },
+  followHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  followArrowWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(31, 122, 224, 0.12)",
+  },
+  followText: {
+    flex: 1,
+  },
+  followTitle: {
+    fontFamily: FontFamily.titleBold,
+    fontSize: 15,
+  },
+  followMeta: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  followStepBtn: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+  },
+  followStepText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: "700",
   },
   viewBanner: {
     position: "absolute",
