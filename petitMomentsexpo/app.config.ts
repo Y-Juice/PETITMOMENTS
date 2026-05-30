@@ -20,6 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_KEY,
       adminEmails: process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? "",
+      orsApiKey: process.env.EXPO_PUBLIC_ORS_API_KEY ?? "",
     },
   };
 

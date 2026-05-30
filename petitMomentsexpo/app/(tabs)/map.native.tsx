@@ -33,13 +33,21 @@ import {
   bearingDegrees,
   compassLabel,
   distanceMeters,
+  distanceToNearestPoint,
   formatDistance,
+  formatDuration,
 } from "@/utils/geo";
 import {
   getInitialRegionForCoordinates,
   getMomentCoordinates,
 } from "@/utils/moments-map-region";
 import Polyline from "react-native-maps/lib/MapPolyline";
+import {
+  fetchRoute,
+  hasRoutingKey,
+  type PlannedRoute,
+  type RouteProfile,
+} from "@/utils/routing";
 import { insertThreadFromMapInSupabase } from "@/utils/threads-supabase";
 
 export default function MapScreenNative() {
@@ -62,6 +70,12 @@ export default function MapScreenNative() {
   >(null);
   const [followStopIndex, setFollowStopIndex] = useState(0);
   const [followArrived, setFollowArrived] = useState(false);
+  const [routeProfile, setRouteProfile] = useState<RouteProfile>("foot-walking");
+  const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const routeKeyRef = useRef("");
+  const lastRouteFetchRef = useRef(0);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -177,6 +191,9 @@ export default function MapScreenNative() {
     setFollowStopIndex(0);
     setFollowArrived(false);
     setViewThreadId(null);
+    setPlannedRoute(null);
+    setRouteError(null);
+    routeKeyRef.current = "";
   }, []);
 
   const advanceFollowStop = useCallback(() => {
@@ -333,6 +350,9 @@ export default function MapScreenNative() {
       setViewThreadId(null);
       setFollowStopIndex(0);
       setFollowArrived(false);
+      setPlannedRoute(null);
+      setRouteError(null);
+      routeKeyRef.current = "";
       firstFollowFixRef.current = true;
       setFollow({ kind: "moment", momentId: String(params.followMomentId) });
     }
@@ -345,6 +365,9 @@ export default function MapScreenNative() {
       setViewThreadId(id);
       setFollowStopIndex(0);
       setFollowArrived(false);
+      setPlannedRoute(null);
+      setRouteError(null);
+      routeKeyRef.current = "";
       firstFollowFixRef.current = true;
       setFollow({ kind: "thread", threadId: id });
     }
@@ -429,6 +452,50 @@ export default function MapScreenNative() {
       feedbackSelectionTap();
     }
   }, [follow, guidance, followArrived, followStopIndex, viewRouteStops.length]);
+
+  useEffect(() => {
+    if (!follow || !followTarget || !userLocation || !hasRoutingKey()) return;
+
+    const target = followTarget;
+    const key = `${routeProfile}|${target.latitude.toFixed(5)},${target.longitude.toFixed(5)}`;
+    const targetChanged = key !== routeKeyRef.current;
+    const offRoute = plannedRoute
+      ? distanceToNearestPoint(userLocation, plannedRoute.coordinates) > 45
+      : true;
+    const now = Date.now();
+
+    if (!targetChanged && !offRoute) return;
+    if (!targetChanged && now - lastRouteFetchRef.current < 6000) return;
+
+    routeKeyRef.current = key;
+    lastRouteFetchRef.current = now;
+
+    let active = true;
+    setRouteLoading(true);
+    setRouteError(null);
+    fetchRoute(userLocation, target, routeProfile)
+      .then((route) => {
+        if (!active) return;
+        setPlannedRoute(route);
+        if (!route) {
+          setRouteError("Geen route gevonden voor dit profiel.");
+        }
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setPlannedRoute(null);
+        setRouteError(
+          err instanceof Error ? err.message : "Route berekenen mislukt.",
+        );
+      })
+      .finally(() => {
+        if (active) setRouteLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [follow, followTarget, userLocation, routeProfile, plannedRoute]);
 
   useEffect(() => {
     const showEvent =
@@ -524,13 +591,23 @@ export default function MapScreenNative() {
             />
           ) : null}
           {follow && userLocation && followTarget ? (
-            <Polyline
-              coordinates={[userLocation, followTarget]}
-              strokeColor="#1F7AE0"
-              strokeWidth={3}
-              lineDashPattern={[8, 8]}
-              lineCap="round"
-            />
+            plannedRoute ? (
+              <Polyline
+                coordinates={plannedRoute.coordinates}
+                strokeColor="#1F7AE0"
+                strokeWidth={5}
+                lineCap="round"
+                lineJoin="round"
+              />
+            ) : (
+              <Polyline
+                coordinates={[userLocation, followTarget]}
+                strokeColor="#1F7AE0"
+                strokeWidth={3}
+                lineDashPattern={[8, 8]}
+                lineCap="round"
+              />
+            )
           ) : null}
         </MapView>
 
@@ -597,13 +674,17 @@ export default function MapScreenNative() {
                     : followTarget.title}
                 </Text>
                 <Text style={[styles.followMeta, { color: muted }]}>
-                  {guidance
-                    ? followArrived
+                  {!guidance
+                    ? "Locatie laden..."
+                    : followArrived
                       ? follow.kind === "thread"
                         ? "Eindpunt bereikt"
                         : "Je bent er!"
-                      : `${formatDistance(guidance.distance)} · richting ${compassLabel(guidance.bearing)}`
-                    : "Locatie laden..."}
+                      : routeLoading && !plannedRoute
+                        ? "Route berekenen..."
+                        : plannedRoute
+                          ? `${formatDistance(plannedRoute.distanceMeters)} · ${formatDuration(plannedRoute.durationSeconds)}`
+                          : `${formatDistance(guidance.distance)} · richting ${compassLabel(guidance.bearing)}`}
                 </Text>
               </View>
               <Pressable
@@ -618,6 +699,88 @@ export default function MapScreenNative() {
                 <MaterialIcons name="close" size={20} color={surfaceText} />
               </Pressable>
             </View>
+
+            {hasRoutingKey() ? (
+              <View style={styles.profileRow}>
+                <Pressable
+                  onPress={() => setRouteProfile("foot-walking")}
+                  style={[
+                    styles.profileBtn,
+                    routeProfile === "foot-walking" && {
+                      backgroundColor: buttonColor,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Route te voet"
+                >
+                  <MaterialIcons
+                    name="directions-walk"
+                    size={18}
+                    color={
+                      routeProfile === "foot-walking" ? "#FFFFFF" : surfaceText
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.profileBtnText,
+                      {
+                        color:
+                          routeProfile === "foot-walking"
+                            ? "#FFFFFF"
+                            : surfaceText,
+                      },
+                    ]}
+                  >
+                    Te voet
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setRouteProfile("cycling-regular")}
+                  style={[
+                    styles.profileBtn,
+                    routeProfile === "cycling-regular" && {
+                      backgroundColor: buttonColor,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Route met de fiets"
+                >
+                  <MaterialIcons
+                    name="directions-bike"
+                    size={18}
+                    color={
+                      routeProfile === "cycling-regular"
+                        ? "#FFFFFF"
+                        : surfaceText
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.profileBtnText,
+                      {
+                        color:
+                          routeProfile === "cycling-regular"
+                            ? "#FFFFFF"
+                            : surfaceText,
+                      },
+                    ]}
+                  >
+                    Fiets
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={[styles.followHint, { color: muted }]}>
+                Stel een routesleutel in voor straatroutes (nu rechte lijn).
+              </Text>
+            )}
+
+            {routeError ? (
+              <Text style={[styles.followHint, { color: Brand.primary }]}>
+                {routeError}
+              </Text>
+            ) : null}
+
             {follow.kind === "thread" &&
             followStopIndex < viewRouteStops.length - 1 ? (
               <Pressable
@@ -940,6 +1103,32 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 13,
     marginTop: 2,
+  },
+  profileRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  profileBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "rgba(107, 124, 110, 0.14)",
+  },
+  profileBtnText: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  followHint: {
+    fontFamily: FontFamily.body,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 10,
   },
   followStepBtn: {
     marginTop: 12,

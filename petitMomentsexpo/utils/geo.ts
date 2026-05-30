@@ -50,6 +50,31 @@ export function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1)}km`;
 }
 
+/** Korte tekstweergave van een reistijd, bv. "8 min" of "1 u 5 min". */
+export function formatDuration(seconds: number): string {
+  const totalMinutes = Math.max(1, Math.round(seconds / 60));
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours} u ${minutes} min` : `${hours} u`;
+}
+
+/**
+ * Afstand (m) van een punt tot het dichtstbijzijnde punt van een route.
+ * Wordt gebruikt om te merken dat de gebruiker van de route is afgeweken.
+ */
+export function distanceToNearestPoint(point: LatLng, path: LatLng[]): number {
+  if (path.length === 0) return Infinity;
+  let nearest = Infinity;
+  for (const coord of path) {
+    const d = distanceMeters(point, coord);
+    if (d < nearest) nearest = d;
+  }
+  return nearest;
+}
+
 const COMPASS_LABELS = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"];
 
 /** Windrichting (N, NO, O, ...) op basis van een hoek in graden. */
