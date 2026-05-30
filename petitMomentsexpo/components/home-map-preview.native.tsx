@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import type { ComponentRef } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Marker from "react-native-maps/lib/MapMarker";
 import MapView from "react-native-maps/lib/MapView";
 
+import { MapPinMarker } from "@/components/map-pin";
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
@@ -77,15 +77,16 @@ export default function HomeMapPreview() {
           showsScale
         >
           {moments.map((moment) => (
-            <Marker
+            <MapPinMarker
               key={moment.id}
               coordinate={{
                 latitude: moment.location.latitude,
                 longitude: moment.location.longitude,
               }}
+              color={Brand.primary}
+              size={32}
               title={moment.title}
               description={`${moment.username} · ${moment.location.label}`}
-              tracksViewChanges={false}
               onPress={() => presentMomentById(moment.id)}
             />
           ))}

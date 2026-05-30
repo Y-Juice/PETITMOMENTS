@@ -1,6 +1,4 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,7 +6,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Marker from 'react-native-maps/lib/MapMarker';
 
-import { Brand } from '@/constants/theme';
+import { MapPinGlyph } from '@/components/map-pin';
 
 type Coordinate = {
   latitude: number;
@@ -52,25 +50,9 @@ export function AddPinMarker({ coordinate, onDragEnd }: AddPinMarkerProps) {
       anchor={{ x: 0.5, y: 1 }}
       tracksViewChanges={tracksViewChanges}
       onDragEnd={(event) => onDragEnd(event.nativeEvent.coordinate)}>
-      <Animated.View style={[styles.wrap, pinStyle]} collapsable={false}>
-        <MaterialIcons name="place" size={42} color={Brand.primary} />
-        <View style={styles.shadow} />
+      <Animated.View collapsable={false} style={pinStyle}>
+        <MapPinGlyph />
       </Animated.View>
     </Marker>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignItems: 'center',
-    width: 44,
-    height: 52,
-  },
-  shadow: {
-    width: 10,
-    height: 4,
-    borderRadius: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    marginTop: -4,
-  },
-});

@@ -14,10 +14,10 @@ import {
   View,
 } from "react-native";
 import type { MapType } from "react-native-maps";
-import Marker from "react-native-maps/lib/MapMarker";
 import MapView from "react-native-maps/lib/MapView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { MapPinMarker } from "@/components/map-pin";
 import { MapScreenShell } from "@/components/map-screen-shell";
 import { ThreadNumberedMarker } from "@/components/thread-numbered-marker";
 import { ThreadRopeMapLayer } from "@/components/thread-rope-map-layer";
@@ -266,17 +266,16 @@ export default function MapScreenNative() {
             }
 
             return (
-              <Marker
+              <MapPinMarker
                 key={moment.id}
                 coordinate={coordinate}
+                color={Brand.primary}
                 title={moment.title}
                 description={
                   composeThread
                     ? "Tik om toe te voegen aan de rode draad"
                     : `${moment.username} · ${moment.location.label}`
                 }
-                pinColor={composeThread ? Brand.primary : undefined}
-                tracksViewChanges={false}
                 onPress={
                   composeThread
                     ? () => onToggleMomentInThread(moment.id)
@@ -286,12 +285,11 @@ export default function MapScreenNative() {
             );
           })}
           {userLocation ? (
-            <Marker
+            <MapPinMarker
               coordinate={userLocation}
+              color="#1F7AE0"
               title="Jouw locatie"
               description="Huidige positie"
-              pinColor="#1F7AE0"
-              tracksViewChanges={false}
             />
           ) : null}
           {composeThread ? (
