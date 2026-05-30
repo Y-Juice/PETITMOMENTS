@@ -1,45 +1,45 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCallback, useState } from 'react';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useCallback, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  AuthOrDivider,
-  AuthWelcomeLine,
-  GradientOutlineButton,
-  GradientPrimaryButton,
-  PetitMomentLogoBlock,
-  TermsAcceptRow,
-  authInputStyle,
-} from '@/components/auth/auth-screen-shared';
-import { Brand } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import { useAuth } from '@/contexts/auth-context';
-import { useThemeColor } from '@/hooks/use-theme-color';
+    AuthOrDivider,
+    AuthWelcomeLine,
+    GradientOutlineButton,
+    GradientPrimaryButton,
+    PetitMomentLogoBlock,
+    TermsAcceptRow,
+    authInputStyle,
+} from "@/components/auth/auth-screen-shared";
+import { Brand } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import { useAuth } from "@/contexts/auth-context";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 const MIN_PASSWORD = 6;
 
 export default function LoginScreen() {
   const { signInWithEmail } = useAuth();
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const muted = useThemeColor({}, 'icon');
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "icon");
   const welcomeColor = useThemeColor(
-    { light: '#4A4A4A', dark: 'rgba(255, 253, 226, 0.82)' },
-    'text',
+    { light: "#4A4A4A", dark: "rgba(255, 253, 226, 0.82)" },
+    "text",
   );
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -49,11 +49,13 @@ export default function LoginScreen() {
     const e = email.trim();
     setFormError(null);
     if (!termsAccepted) {
-      setFormError('Je moet de algemene voorwaarden accepteren om verder te gaan.');
+      setFormError(
+        "Je moet de algemene voorwaarden accepteren om verder te gaan.",
+      );
       return;
     }
-    if (!e.includes('@')) {
-      setFormError('Gebruik een geldig e-mailadres.');
+    if (!e.includes("@")) {
+      setFormError("Gebruik een geldig e-mailadres.");
       return;
     }
     if (password.length < MIN_PASSWORD) {
@@ -70,7 +72,7 @@ export default function LoginScreen() {
   const inputExtras = Platform.select({
     ios: {
       autoCorrect: false,
-      autoCapitalize: 'none' as const,
+      autoCapitalize: "none" as const,
     },
     default: {},
   });
@@ -78,14 +80,19 @@ export default function LoginScreen() {
   const fieldBase = authInputStyle(textColor, muted) as Record<string, unknown>;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top', 'bottom']}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor }]}
+      edges={["top", "bottom"]}
+    >
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <PetitMomentLogoBlock />
           <AuthWelcomeLine color={welcomeColor}>
             Welkom — log in of maak een account aan.
@@ -122,10 +129,13 @@ export default function LoginScreen() {
             <Pressable
               onPress={() => setShowPassword((v) => !v)}
               style={styles.eyeBtn}
-              accessibilityLabel={showPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
-              hitSlop={10}>
+              accessibilityLabel={
+                showPassword ? "Verberg wachtwoord" : "Toon wachtwoord"
+              }
+              hitSlop={10}
+            >
               <MaterialIcons
-                name={showPassword ? 'visibility-off' : 'visibility'}
+                name={showPassword ? "visibility-off" : "visibility"}
                 size={22}
                 color={muted}
               />
@@ -143,7 +153,7 @@ export default function LoginScreen() {
           {formError ? <Text style={styles.error}>{formError}</Text> : null}
 
           <GradientPrimaryButton
-            label={submitting ? 'Bezig…' : 'Inloggen'}
+            label={submitting ? "Bezig…" : "Inloggen"}
             onPress={() => void handleSubmit()}
             loading={submitting}
             disabled={submitting}
@@ -175,14 +185,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   passwordWrap: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 14,
   },
   passwordInput: {
     marginBottom: 0,
   },
   eyeBtn: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
     top: 14,
   },

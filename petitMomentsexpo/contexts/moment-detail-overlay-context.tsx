@@ -1,48 +1,50 @@
-import { BlurView } from 'expo-blur';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Image } from 'expo-image';
-import { setStatusBarStyle } from 'expo-status-bar';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
+import { setStatusBarStyle } from "expo-status-bar";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import {
-  ActivityIndicator,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    ActivityIndicator,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { VoteWidget } from '@/components/vote-widget';
-import { ContentWarningGate } from '@/components/content-warning-gate';
-import { ReportContentButton } from '@/components/report-content-button';
-import { hasContentWarning } from '@/data/moderation';
-import { FontFamily } from '@/constants/typography';
-import { useMoments } from '@/contexts/moments-context';
-import { useSaves } from '@/contexts/saves-context';
-import { useVotes } from '@/contexts/votes-context';
+import { feedbackSelectionTap } from "@/utils/feedback";
+import { ContentWarningGate } from "@/components/content-warning-gate";
+import { ReportContentButton } from "@/components/report-content-button";
+import { VoteWidget } from "@/components/vote-widget";
+import { FontFamily } from "@/constants/typography";
+import { useMoments } from "@/contexts/moments-context";
+import { useSaves } from "@/contexts/saves-context";
+import { useVotes } from "@/contexts/votes-context";
+import { hasContentWarning } from "@/data/moderation";
 
-const CARD_BG = '#C84E3D';
-const BADGE_FG = '#1A1A1A';
-const DIM_OVERLAY = 'rgba(0, 0, 0, 0.42)';
+const CARD_BG = "#C84E3D";
+const BADGE_FG = "#1A1A1A";
+const DIM_OVERLAY = "rgba(0, 0, 0, 0.42)";
 
 type MomentDetailOverlayValue = {
   presentMomentById: (id: string) => void;
   dismiss: () => void;
 };
 
-const MomentDetailOverlayContext = createContext<MomentDetailOverlayValue | undefined>(
-  undefined,
-);
+const MomentDetailOverlayContext = createContext<
+  MomentDetailOverlayValue | undefined
+>(undefined);
 
 export function MomentDetailOverlayProvider({
   children,
@@ -64,7 +66,10 @@ export function MomentDetailOverlayProvider({
 
   const presentMomentById = useCallback((id: string) => {
     const t = String(id).trim();
-    if (t) setOpenId(t);
+    if (t) {
+      feedbackSelectionTap();
+      setOpenId(t);
+    }
   }, []);
 
   const dismiss = useCallback(() => {
@@ -73,12 +78,12 @@ export function MomentDetailOverlayProvider({
 
   useEffect(() => {
     if (visible) {
-      setStatusBarStyle('light');
+      setStatusBarStyle("light");
     } else {
-      setStatusBarStyle('auto');
+      setStatusBarStyle("auto");
     }
     return () => {
-      setStatusBarStyle('auto');
+      setStatusBarStyle("auto");
     };
   }, [visible]);
 
@@ -111,17 +116,23 @@ export function MomentDetailOverlayProvider({
         visible={visible}
         onRequestClose={dismiss}
         statusBarTranslucent
-        {...(Platform.OS === 'ios' ? { presentationStyle: 'overFullScreen' as const } : {})}>
+        {...(Platform.OS === "ios"
+          ? { presentationStyle: "overFullScreen" as const }
+          : {})}
+      >
         <View style={styles.modalRoot}>
           <BlurView
-            intensity={Platform.OS === 'web' ? 48 : 72}
+            intensity={Platform.OS === "web" ? 48 : 72}
             tint="dark"
             pointerEvents="none"
             style={StyleSheet.absoluteFillObject}
           />
           <View
             pointerEvents="none"
-            style={[StyleSheet.absoluteFillObject, { backgroundColor: DIM_OVERLAY }]}
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: DIM_OVERLAY },
+            ]}
           />
 
           <Pressable
@@ -132,14 +143,22 @@ export function MomentDetailOverlayProvider({
           />
 
           <View pointerEvents="box-none" style={styles.foregroundLayer}>
-            <SafeAreaView edges={['top']} pointerEvents="box-none" style={styles.safeTop}>
+            <SafeAreaView
+              edges={["top"]}
+              pointerEvents="box-none"
+              style={styles.safeTop}
+            >
               <View style={styles.topBar} pointerEvents="box-none">
                 <View pointerEvents="none" style={styles.topBarSpacer} />
                 <Pressable
                   onPress={dismiss}
-                  style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
+                  style={({ pressed }) => [
+                    styles.closeBtn,
+                    pressed && styles.closeBtnPressed,
+                  ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Sluiten">
+                  accessibilityLabel="Sluiten"
+                >
                   <MaterialIcons name="close" size={26} color="#FFFFFF" />
                 </Pressable>
               </View>
@@ -151,17 +170,25 @@ export function MomentDetailOverlayProvider({
                 showsVerticalScrollIndicator={false}
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
-                bounces>
+                bounces
+              >
                 {!openId ? null : loading && !moment ? (
                   <View style={[styles.stateCard, styles.stateCardCenter]}>
                     <ActivityIndicator size="large" color="#FFFFFF" />
                   </View>
                 ) : !moment ? (
                   <View style={styles.stateCard}>
-                    <Text style={styles.stateText}>Dit moment is niet (meer) gevonden.</Text>
+                    <Text style={styles.stateText}>
+                      Dit moment is niet (meer) gevonden.
+                    </Text>
                   </View>
                 ) : (
-                  <View style={styles.cardShadow}>
+                  <Animated.View
+                    key={moment.id}
+                    entering={FadeIn.duration(220).withInitialValues({
+                      transform: [{ scale: 0.96 }],
+                    })}
+                    style={styles.cardShadow}>
                     <View style={styles.card}>
                       <View style={styles.titleRow}>
                         <Text style={styles.title}>{moment.title}</Text>
@@ -178,8 +205,8 @@ export function MomentDetailOverlayProvider({
                           <VoteWidget
                             score={voteSummary.score}
                             myVote={myVote}
-                            onUp={() => void voteOnMoment(moment.id, 'up')}
-                            onDown={() => void voteOnMoment(moment.id, 'down')}
+                            onUp={() => void voteOnMoment(moment.id, "up")}
+                            onDown={() => void voteOnMoment(moment.id, "down")}
                             size="large"
                             baseColor="#FFFFFF"
                             surfaceColor="rgba(255,255,255,0.18)"
@@ -188,7 +215,10 @@ export function MomentDetailOverlayProvider({
                       ) : null}
 
                       {hasContentWarning(moment) ? (
-                        <ContentWarningGate item={moment} style={styles.warningBlock}>
+                        <ContentWarningGate
+                          item={moment}
+                          style={styles.warningBlock}
+                        >
                           {moment.imageUrl ? (
                             <Image
                               source={{ uri: moment.imageUrl }}
@@ -203,10 +233,14 @@ export function MomentDetailOverlayProvider({
                                 size={40}
                                 color="rgba(255,255,255,0.5)"
                               />
-                              <Text style={styles.photoPlaceholderText}>Geen foto</Text>
+                              <Text style={styles.photoPlaceholderText}>
+                                Geen foto
+                              </Text>
                             </View>
                           )}
-                          <Text style={styles.description}>{moment.description}</Text>
+                          <Text style={styles.description}>
+                            {moment.description}
+                          </Text>
                         </ContentWarningGate>
                       ) : (
                         <>
@@ -224,10 +258,14 @@ export function MomentDetailOverlayProvider({
                                 size={40}
                                 color="rgba(255,255,255,0.5)"
                               />
-                              <Text style={styles.photoPlaceholderText}>Geen foto</Text>
+                              <Text style={styles.photoPlaceholderText}>
+                                Geen foto
+                              </Text>
                             </View>
                           )}
-                          <Text style={styles.description}>{moment.description}</Text>
+                          <Text style={styles.description}>
+                            {moment.description}
+                          </Text>
                         </>
                       )}
 
@@ -243,19 +281,22 @@ export function MomentDetailOverlayProvider({
                         accessibilityRole="button"
                         accessibilityState={{ selected: saved }}
                         accessibilityLabel={
-                          saved ? 'Verwijder uit opgeslagen momenten' : 'Bewaar dit moment'
-                        }>
+                          saved
+                            ? "Verwijder uit opgeslagen momenten"
+                            : "Bewaar dit moment"
+                        }
+                      >
                         {savingToggle ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                           <>
                             <MaterialIcons
-                              name={saved ? 'bookmark' : 'bookmark-border'}
+                              name={saved ? "bookmark" : "bookmark-border"}
                               size={20}
                               color="#FFFFFF"
                             />
                             <Text style={styles.saveBtnText}>
-                              {saved ? 'Bewaard' : 'Bewaar'}
+                              {saved ? "Bewaard" : "Bewaar"}
                             </Text>
                           </>
                         )}
@@ -265,7 +306,7 @@ export function MomentDetailOverlayProvider({
                         {moment.username}, {moment.location.label}
                       </Text>
                     </View>
-                  </View>
+                  </Animated.View>
                 )}
               </ScrollView>
             </View>
@@ -279,7 +320,9 @@ export function MomentDetailOverlayProvider({
 export function useMomentDetailOverlay(): MomentDetailOverlayValue {
   const ctx = useContext(MomentDetailOverlayContext);
   if (!ctx) {
-    throw new Error('useMomentDetailOverlay must be used inside MomentDetailOverlayProvider');
+    throw new Error(
+      "useMomentDetailOverlay must be used inside MomentDetailOverlayProvider",
+    );
   }
   return ctx;
 }
@@ -292,12 +335,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   safeTop: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
@@ -307,32 +350,32 @@ const styles = StyleSheet.create({
   closeBtn: {
     padding: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: "rgba(0,0,0,0.28)",
   },
   closeBtnPressed: {
     opacity: 0.75,
   },
   cardColumn: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingBottom: 24,
     paddingTop: 4,
   },
   scroll: {
-    alignSelf: 'stretch',
-    maxHeight: '88%',
+    alignSelf: "stretch",
+    maxHeight: "88%",
   },
   scrollContent: {
     paddingVertical: 12,
   },
   cardShadow: {
     borderRadius: 40,
-    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
-    elevation: Platform.OS === 'android' ? 12 : 0,
-    ...(Platform.OS === 'ios'
+    overflow: Platform.OS === "android" ? "hidden" : "visible",
+    elevation: Platform.OS === "android" ? 12 : 0,
+    ...(Platform.OS === "ios"
       ? {
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.35,
           shadowRadius: 24,
@@ -345,15 +388,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingTop: 28,
     paddingBottom: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   stateCard: {
     backgroundColor: CARD_BG,
     borderRadius: 40,
     padding: 36,
     minHeight: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   stateCardCenter: {
     minHeight: 200,
@@ -361,18 +404,18 @@ const styles = StyleSheet.create({
   stateText: {
     fontFamily: FontFamily.body,
     fontSize: 16,
-    color: 'rgba(255,255,255,0.95)',
-    textAlign: 'center',
+    color: "rgba(255,255,255,0.95)",
+    textAlign: "center",
     lineHeight: 23,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 12,
     marginBottom: 14,
   },
   voteWrap: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 18,
   },
   title: {
@@ -381,14 +424,14 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
     letterSpacing: -0.4,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingVertical: 6,
     paddingHorizontal: 13,
     borderRadius: 20,
@@ -397,14 +440,14 @@ const styles = StyleSheet.create({
   badgeScore: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: BADGE_FG,
   },
   photo: {
-    width: '100%',
+    width: "100%",
     height: 220,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: "rgba(0,0,0,0.12)",
   },
   photoGate: {
     marginBottom: 22,
@@ -413,44 +456,44 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   photoPlaceholder: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     marginBottom: 22,
   },
   photoPlaceholderText: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
+    color: "rgba(255,255,255,0.7)",
   },
   description: {
     fontFamily: FontFamily.body,
     fontSize: 16,
     lineHeight: 25,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     marginBottom: 18,
   },
   saveBtn: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.55)',
-    backgroundColor: 'rgba(255,255,255,0.0)',
+    borderColor: "rgba(255,255,255,0.55)",
+    backgroundColor: "rgba(255,255,255,0.0)",
     marginBottom: 18,
     minHeight: 40,
   },
   saveBtnActive: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderColor: '#FFFFFF',
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderColor: "#FFFFFF",
   },
   saveBtnPressed: {
     opacity: 0.82,
@@ -461,13 +504,13 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontFamily: FontFamily.body,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   footer: {
     fontFamily: FontFamily.body,
     fontSize: 14,
     lineHeight: 20,
-    color: 'rgba(255,255,255,0.92)',
+    color: "rgba(255,255,255,0.92)",
   },
 });

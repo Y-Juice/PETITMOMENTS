@@ -2,7 +2,13 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
@@ -119,7 +125,10 @@ export function GradientPrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      style={({ pressed }) => [pressed && styles.btnPressed, disabled && styles.btnMuted]}
+      style={({ pressed }) => [
+        pressed && styles.btnPressed,
+        disabled && styles.btnMuted,
+      ]}
     >
       <LinearGradient
         colors={[...AUTH_GRADIENT]}
@@ -159,7 +168,9 @@ export function GradientOutlineButton({
           style={styles.outlineOuter}
         >
           <View style={[styles.outlineInner, { backgroundColor: fillColor }]}>
-            <Text style={[styles.outlineLabel, { color: textColor }]}>{label}</Text>
+            <Text style={[styles.outlineLabel, { color: textColor }]}>
+              {label}
+            </Text>
           </View>
         </LinearGradient>
       </Pressable>

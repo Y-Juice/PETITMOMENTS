@@ -1,17 +1,18 @@
-import { useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { MomentCard } from '@/components/moment-card';
-import { Brand, getMomentCardColors } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import { useAuth } from '@/contexts/auth-context';
-import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
-import { useMoments } from '@/contexts/moments-context';
-import { useThreads, type ThreadItem } from '@/contexts/threads-context';
-import { useVotes } from '@/contexts/votes-context';
-import type { Moment } from '@/data/mockMoments';
-import type { VoteDirection } from '@/utils/votes-supabase';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { MomentCard } from "@/components/moment-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Brand, getMomentCardColors } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import { useAuth } from "@/contexts/auth-context";
+import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
+import { useMoments } from "@/contexts/moments-context";
+import { useThreads, type ThreadItem } from "@/contexts/threads-context";
+import { useVotes } from "@/contexts/votes-context";
+import type { Moment } from "@/data/mockMoments";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import type { VoteDirection } from "@/utils/votes-supabase";
 
 type Props = {
   direction: VoteDirection;
@@ -24,9 +25,9 @@ export function VotedItemsList({ direction }: Props) {
   const { myMomentVotes, myThreadVotes, loading, loadError } = useVotes();
   const { presentMomentById } = useMomentDetailOverlay();
 
-  const textColor = useThemeColor({}, 'text');
-  const muted = useThemeColor({}, 'icon');
-  const tint = useThemeColor({}, 'tint');
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "icon");
+  const tint = useThemeColor({}, "tint");
 
   const votedMoments = useMemo<Moment[]>(() => {
     const ids = new Set<string>();
@@ -61,14 +62,15 @@ export function VotedItemsList({ direction }: Props) {
   }
 
   const totalCount = votedMoments.length + votedThreads.length;
-  const labelWord = direction === 'up' ? 'geüpvote' : 'gedownvote';
+  const labelWord = direction === "up" ? "geüpvote" : "gedownvote";
 
   if (totalCount === 0) {
     return (
-      <Text style={[styles.emptyText, { color: muted }]}>
-        Je hebt nog niets {labelWord}. Gebruik de pijl-knoppen op een moment of
-        discussie om hier dingen te verzamelen.
-      </Text>
+      <EmptyState
+        icon={direction === "up" ? "thumb-up-off-alt" : "thumb-down-off-alt"}
+        title={`Nog niets ${labelWord}`}
+        message="Gebruik de pijl-knoppen op een moment of discussie om hier dingen te verzamelen."
+      />
     );
   }
 
@@ -94,12 +96,12 @@ export function VotedItemsList({ direction }: Props) {
           {votedMoments.map((moment, index) => {
             const position =
               momentsCount === 1
-                ? 'single'
+                ? "single"
                 : index === 0
-                  ? 'first'
+                  ? "first"
                   : index === momentsCount - 1
-                    ? 'last'
-                    : 'middle';
+                    ? "last"
+                    : "middle";
             return (
               <MomentCard
                 key={moment.id}
@@ -131,10 +133,12 @@ export function VotedItemsList({ direction }: Props) {
             return (
               <View
                 key={thread.id}
-                style={[styles.threadCard, { backgroundColor: palette.bg }]}>
+                style={[styles.threadCard, { backgroundColor: palette.bg }]}
+              >
                 <Text
                   style={[styles.threadTitle, { color: palette.text }]}
-                  numberOfLines={2}>
+                  numberOfLines={2}
+                >
                   {thread.title}
                 </Text>
                 {thread.momentIds?.length ? (
@@ -145,7 +149,8 @@ export function VotedItemsList({ direction }: Props) {
                 {preview ? (
                   <Text
                     style={[styles.threadBody, { color: palette.sub }]}
-                    numberOfLines={4}>
+                    numberOfLines={4}
+                  >
                     {preview}
                   </Text>
                 ) : null}
@@ -170,7 +175,7 @@ const styles = StyleSheet.create({
   },
   loading: {
     paddingVertical: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   momentList: {
     paddingTop: 50,
@@ -192,7 +197,7 @@ const styles = StyleSheet.create({
   threadMeta: {
     fontFamily: FontFamily.body,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 6,
   },
   threadBody: {

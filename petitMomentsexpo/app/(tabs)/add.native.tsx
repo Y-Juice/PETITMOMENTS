@@ -3,16 +3,17 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import MapView from 'react-native-maps/lib/MapView';
-import Marker from 'react-native-maps/lib/MapMarker';
 import { useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AddPinMarker } from '@/components/add-pin-marker';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
 import { useMoments } from '@/contexts/moments-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { feedbackSelectionTap, feedbackUploadSuccess } from '@/utils/feedback';
 import { insertMomentInSupabase } from '@/utils/moments-supabase';
 
 const DEFAULT_COORDINATE = {
@@ -74,6 +75,7 @@ export default function AddMomentScreenNative() {
   };
 
   const updateCoordinateFields = async (coordinate: Coordinate, fallbackLabel: string) => {
+    feedbackSelectionTap();
     setSelectedCoordinate(coordinate);
     setLatitude(coordinate.latitude.toFixed(6));
     setLongitude(coordinate.longitude.toFixed(6));
@@ -233,6 +235,7 @@ export default function AddMomentScreenNative() {
     });
 
     setIsSubmitting(false);
+    feedbackUploadSuccess();
     resetForm();
     Alert.alert('Moment gedeeld', 'Je moment is toegevoegd aan de lijst en kaart.');
     router.replace('/(tabs)');
@@ -295,10 +298,9 @@ export default function AddMomentScreenNative() {
               }}
               onPress={(event) => onMapPress(event.nativeEvent.coordinate)}>
               {selectedCoordinate ? (
-                <Marker
+                <AddPinMarker
                   coordinate={selectedCoordinate}
-                  draggable
-                  onDragEnd={(event) => onMapPress(event.nativeEvent.coordinate)}
+                  onDragEnd={(coordinate) => onMapPress(coordinate)}
                 />
               ) : null}
             </MapView>

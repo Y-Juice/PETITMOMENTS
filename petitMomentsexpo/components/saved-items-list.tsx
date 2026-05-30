@@ -1,24 +1,25 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCallback, useMemo, useState } from 'react';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 
-import { MomentCard } from '@/components/moment-card';
-import { Brand, getMomentCardColors } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import { useAuth } from '@/contexts/auth-context';
-import { useMomentDetailOverlay } from '@/contexts/moment-detail-overlay-context';
-import { useMoments } from '@/contexts/moments-context';
-import { useSaves } from '@/contexts/saves-context';
-import { useThreads, type ThreadItem } from '@/contexts/threads-context';
-import type { Moment } from '@/data/mockMoments';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { MomentCard } from "@/components/moment-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Brand, getMomentCardColors } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import { useAuth } from "@/contexts/auth-context";
+import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
+import { useMoments } from "@/contexts/moments-context";
+import { useSaves } from "@/contexts/saves-context";
+import { useThreads, type ThreadItem } from "@/contexts/threads-context";
+import type { Moment } from "@/data/mockMoments";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export function SavedItemsList() {
   const { session } = useAuth();
@@ -33,9 +34,9 @@ export function SavedItemsList() {
   } = useSaves();
   const { presentMomentById } = useMomentDetailOverlay();
 
-  const textColor = useThemeColor({}, 'text');
-  const muted = useThemeColor({}, 'icon');
-  const tint = useThemeColor({}, 'tint');
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "icon");
+  const tint = useThemeColor({}, "tint");
 
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -54,7 +55,7 @@ export function SavedItemsList() {
       setBusyId(threadId);
       const { error } = await toggleThreadSave(threadId);
       setBusyId(null);
-      if (error) Alert.alert('Bijwerken mislukt', error);
+      if (error) Alert.alert("Bijwerken mislukt", error);
     },
     [busyId, toggleThreadSave],
   );
@@ -77,10 +78,11 @@ export function SavedItemsList() {
 
   if (savedMoments.length === 0 && savedThreads.length === 0) {
     return (
-      <Text style={[styles.emptyText, { color: muted }]}>
-        Je hebt nog niets opgeslagen. Tik op het bladwijzer-icoon op een moment
-        of discussie om het hier te bewaren.
-      </Text>
+      <EmptyState
+        icon="bookmark-border"
+        title="Nog niets opgeslagen"
+        message="Tik op het bladwijzer-icoon op een moment of discussie om het hier te bewaren."
+      />
     );
   }
 
@@ -89,7 +91,9 @@ export function SavedItemsList() {
   return (
     <View style={styles.sections}>
       {loadError ? (
-        <Text style={[styles.errorText, { color: Brand.primary }]}>{loadError}</Text>
+        <Text style={[styles.errorText, { color: Brand.primary }]}>
+          {loadError}
+        </Text>
       ) : null}
 
       <Text style={[styles.sectionLabel, { color: textColor }]}>
@@ -105,12 +109,12 @@ export function SavedItemsList() {
           {savedMoments.map((moment, index) => {
             const position =
               momentsCount === 1
-                ? 'single'
+                ? "single"
                 : index === 0
-                  ? 'first'
+                  ? "first"
                   : index === momentsCount - 1
-                    ? 'last'
-                    : 'middle';
+                    ? "last"
+                    : "middle";
             return (
               <MomentCard
                 key={moment.id}
@@ -144,11 +148,13 @@ export function SavedItemsList() {
             return (
               <View
                 key={thread.id}
-                style={[styles.threadCard, { backgroundColor: palette.bg }]}>
+                style={[styles.threadCard, { backgroundColor: palette.bg }]}
+              >
                 <View style={styles.threadHeaderRow}>
                   <Text
                     style={[styles.threadTitle, { color: palette.text }]}
-                    numberOfLines={2}>
+                    numberOfLines={2}
+                  >
                     {thread.title}
                   </Text>
                   <Pressable
@@ -161,7 +167,8 @@ export function SavedItemsList() {
                       isBusy && styles.threadSaveBtnDisabled,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel="Verwijder uit opgeslagen">
+                    accessibilityLabel="Verwijder uit opgeslagen"
+                  >
                     {isBusy ? (
                       <ActivityIndicator size="small" color={palette.text} />
                     ) : (
@@ -183,7 +190,8 @@ export function SavedItemsList() {
                 {preview ? (
                   <Text
                     style={[styles.threadBody, { color: palette.sub }]}
-                    numberOfLines={4}>
+                    numberOfLines={4}
+                  >
                     {preview}
                   </Text>
                 ) : null}
@@ -208,7 +216,7 @@ const styles = StyleSheet.create({
   },
   loading: {
     paddingVertical: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   /** Matches the stacked look of MomentCard on the home feed (cards overlap each other). */
   momentList: {
@@ -223,8 +231,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   threadHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 10,
     marginBottom: 6,
   },
@@ -238,10 +246,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: "rgba(0,0,0,0.18)",
   },
   threadSaveBtnPressed: {
     opacity: 0.85,
@@ -252,7 +260,7 @@ const styles = StyleSheet.create({
   threadMeta: {
     fontFamily: FontFamily.body,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 6,
   },
   threadBody: {

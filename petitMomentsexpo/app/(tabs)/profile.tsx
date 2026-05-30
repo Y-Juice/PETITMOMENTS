@@ -1,34 +1,35 @@
-import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { Image } from "expo-image";
+import { useRouter, type Href } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SavedItemsList } from '@/components/saved-items-list';
-import { VotedItemsList } from '@/components/voted-items-list';
-import { Brand } from '@/constants/theme';
-import { FontFamily } from '@/constants/typography';
-import { useAuth } from '@/contexts/auth-context';
-import { useAdmin } from '@/contexts/admin-context';
-import { useMoments } from '@/contexts/moments-context';
-import type { Moment } from '@/data/mockMoments';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { SavedItemsList } from "@/components/saved-items-list";
+import { VotedItemsList } from "@/components/voted-items-list";
+import { Brand } from "@/constants/theme";
+import { FontFamily } from "@/constants/typography";
+import { useAdmin } from "@/contexts/admin-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useMoments } from "@/contexts/moments-context";
+import type { Moment } from "@/data/mockMoments";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { feedbackClick } from "@/utils/feedback";
 
-type TabKey = 'created' | 'saved' | 'upvoted' | 'downvoted';
+type TabKey = "created" | "saved" | "upvoted" | "downvoted";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'created', label: 'Mijn momenten' },
-  { key: 'saved', label: 'Opgeslagen' },
-  { key: 'upvoted', label: 'Upvotes' },
-  { key: 'downvoted', label: 'Downvotes' },
+  { key: "created", label: "Mijn momenten" },
+  { key: "saved", label: "Opgeslagen" },
+  { key: "upvoted", label: "Upvotes" },
+  { key: "downvoted", label: "Downvotes" },
 ];
 
 export default function ProfileScreen() {
@@ -37,23 +38,23 @@ export default function ProfileScreen() {
   const { isAdmin } = useAdmin();
   const { moments, updateMoment, deleteMoment } = useMoments();
   const [signingOut, setSigningOut] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>('created');
+  const [activeTab, setActiveTab] = useState<TabKey>("created");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const muted = useThemeColor({}, 'icon');
-  const tint = useThemeColor({}, 'tint');
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "icon");
+  const tint = useThemeColor({}, "tint");
   const cardBg = useThemeColor(
-    { light: '#FFFFFF', dark: '#171717' },
-    'background',
+    { light: "#FFFFFF", dark: "#171717" },
+    "background",
   );
   const borderColor = useThemeColor(
-    { light: '#E2E2E2', dark: '#343434' },
-    'text',
+    { light: "#E2E2E2", dark: "#343434" },
+    "text",
   );
 
-  const email = session?.user?.email ?? '';
+  const email = session?.user?.email ?? "";
   const currentUserId = session?.user?.id ?? null;
 
   const myMoments = useMemo<Moment[]>(() => {
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
   }, [moments, currentUserId]);
 
   const onSignOut = useCallback(async () => {
+    feedbackClick();
     setSigningOut(true);
     await signOut();
     setSigningOut(false);
@@ -75,7 +77,7 @@ export default function ProfileScreen() {
       const { error } = await updateMoment(moment.id, { isPublic: next });
       setBusyId(null);
       if (error) {
-        Alert.alert('Bijwerken mislukt', error);
+        Alert.alert("Bijwerken mislukt", error);
       }
     },
     [busyId, updateMoment],
@@ -84,19 +86,19 @@ export default function ProfileScreen() {
   const onDelete = useCallback(
     (moment: Moment) => {
       Alert.alert(
-        'Moment verwijderen',
-        'Weet je zeker dat je dit moment definitief wilt verwijderen?',
+        "Moment verwijderen",
+        "Weet je zeker dat je dit moment definitief wilt verwijderen?",
         [
-          { text: 'Annuleren', style: 'cancel' },
+          { text: "Annuleren", style: "cancel" },
           {
-            text: 'Verwijderen',
-            style: 'destructive',
+            text: "Verwijderen",
+            style: "destructive",
             onPress: async () => {
               setBusyId(moment.id);
               const { error } = await deleteMoment(moment.id);
               setBusyId(null);
               if (error) {
-                Alert.alert('Verwijderen mislukt', error);
+                Alert.alert("Verwijderen mislukt", error);
               }
             },
           },
@@ -129,7 +131,8 @@ export default function ProfileScreen() {
           return (
             <View
               key={moment.id}
-              style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+              style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+            >
               {moment.imageUrl ? (
                 <Image
                   source={{ uri: moment.imageUrl }}
@@ -141,7 +144,8 @@ export default function ProfileScreen() {
                 <View style={styles.cardHeaderRow}>
                   <Text
                     style={[styles.cardTitle, { color: textColor }]}
-                    numberOfLines={2}>
+                    numberOfLines={2}
+                  >
                     {moment.title}
                   </Text>
                   <View
@@ -149,20 +153,25 @@ export default function ProfileScreen() {
                       styles.badge,
                       {
                         backgroundColor: isPublic
-                          ? 'rgba(28, 125, 67, 0.15)'
-                          : 'rgba(196, 69, 54, 0.15)',
+                          ? "rgba(28, 125, 67, 0.15)"
+                          : "rgba(196, 69, 54, 0.15)",
                       },
-                    ]}>
+                    ]}
+                  >
                     <Text
                       style={[
                         styles.badgeText,
-                        { color: isPublic ? '#1C7D43' : Brand.primary },
-                      ]}>
-                      {isPublic ? 'Publiek' : 'Privé'}
+                        { color: isPublic ? "#1C7D43" : Brand.primary },
+                      ]}
+                    >
+                      {isPublic ? "Publiek" : "Privé"}
                     </Text>
                   </View>
                 </View>
-                <Text style={[styles.cardMeta, { color: muted }]} numberOfLines={1}>
+                <Text
+                  style={[styles.cardMeta, { color: muted }]}
+                  numberOfLines={1}
+                >
                   {moment.location.label}
                 </Text>
 
@@ -174,13 +183,15 @@ export default function ProfileScreen() {
                       isBusy && styles.actionBtnDisabled,
                     ]}
                     disabled={isBusy}
-                    onPress={() => void onTogglePrivacy(moment)}>
+                    onPress={() => void onTogglePrivacy(moment)}
+                  >
                     {isBusy ? (
                       <ActivityIndicator size="small" color={textColor} />
                     ) : (
                       <Text
-                        style={[styles.actionBtnText, { color: textColor }]}>
-                        {isPublic ? 'Maak privé' : 'Maak publiek'}
+                        style={[styles.actionBtnText, { color: textColor }]}
+                      >
+                        {isPublic ? "Maak privé" : "Maak publiek"}
                       </Text>
                     )}
                   </Pressable>
@@ -191,7 +202,8 @@ export default function ProfileScreen() {
                       isBusy && styles.actionBtnDisabled,
                     ]}
                     disabled={isBusy}
-                    onPress={() => onDelete(moment)}>
+                    onPress={() => onDelete(moment)}
+                  >
                     <Text style={[styles.actionBtnText, styles.deleteBtnText]}>
                       Verwijderen
                     </Text>
@@ -211,24 +223,28 @@ export default function ProfileScreen() {
         Binnenkort beschikbaar
       </Text>
       <Text style={[styles.placeholderText, { color: muted }]}>
-        Hier verschijnen je {label.toLowerCase()} zodra deze functie is toegevoegd.
+        Hier verschijnen je {label.toLowerCase()} zodra deze functie is
+        toegevoegd.
       </Text>
     </View>
   );
 
   let tabContent: React.ReactNode = null;
-  if (activeTab === 'created') tabContent = renderCreatedTab();
-  else if (activeTab === 'saved') tabContent = <SavedItemsList />;
-  else if (activeTab === 'upvoted') tabContent = <VotedItemsList direction="up" />;
-  else if (activeTab === 'downvoted') tabContent = <VotedItemsList direction="down" />;
+  if (activeTab === "created") tabContent = renderCreatedTab();
+  else if (activeTab === "saved") tabContent = <SavedItemsList />;
+  else if (activeTab === "upvoted")
+    tabContent = <VotedItemsList direction="up" />;
+  else if (activeTab === "downvoted")
+    tabContent = <VotedItemsList direction="down" />;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={["top"]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={[styles.emailLabel, { color: muted }]}>Ingelogd als</Text>
-        <Text style={[styles.email, { color: textColor }]}>{email || '—'}</Text>
+        <Text style={[styles.email, { color: textColor }]}>{email || "—"}</Text>
 
         {isAdmin ? (
           <Pressable
@@ -237,7 +253,8 @@ export default function ProfileScreen() {
               { backgroundColor: tint },
               pressed && styles.pressedBtn,
             ]}
-            onPress={() => router.push('/admin' as Href)}>
+            onPress={() => router.push("/admin" as Href)}
+          >
             <Text style={styles.adminBtnText}>Moderatie dashboard</Text>
           </Pressable>
         ) : null}
@@ -248,18 +265,22 @@ export default function ProfileScreen() {
             { borderColor: tint, opacity: pressed || signingOut ? 0.75 : 1 },
           ]}
           onPress={() => void onSignOut()}
-          disabled={signingOut}>
+          disabled={signingOut}
+        >
           {signingOut ? (
             <ActivityIndicator color={tint} />
           ) : (
-            <Text style={[styles.signOutLabel, { color: tint }]}>Uitloggen</Text>
+            <Text style={[styles.signOutLabel, { color: tint }]}>
+              Uitloggen
+            </Text>
           )}
         </Pressable>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}>
+          contentContainerStyle={styles.tabsRow}
+        >
           {TABS.map((tab) => {
             const isActive = tab.key === activeTab;
             return (
@@ -270,12 +291,14 @@ export default function ProfileScreen() {
                   { borderColor },
                   isActive && { backgroundColor: tint, borderColor: tint },
                 ]}
-                onPress={() => setActiveTab(tab.key)}>
+                onPress={() => setActiveTab(tab.key)}
+              >
                 <Text
                   style={[
                     styles.tabChipText,
-                    { color: isActive ? '#FFFFFF' : textColor },
-                  ]}>
+                    { color: isActive ? "#FFFFFF" : textColor },
+                  ]}
+                >
                   {tab.label}
                 </Text>
               </Pressable>
@@ -309,16 +332,16 @@ const styles = StyleSheet.create({
   adminBtn: {
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 44,
     marginBottom: 12,
   },
   adminBtnText: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   pressedBtn: {
     opacity: 0.88,
@@ -327,18 +350,18 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth + 1,
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 44,
     marginBottom: 20,
   },
   signOutLabel: {
     fontFamily: FontFamily.body,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tabsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     paddingVertical: 6,
     paddingRight: 4,
@@ -352,7 +375,7 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tabContent: {
     marginTop: 16,
@@ -363,19 +386,19 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardImage: {
-    width: '100%',
+    width: "100%",
     height: 160,
   },
   cardBody: {
     padding: 12,
   },
   cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: 10,
     marginBottom: 4,
   },
@@ -383,7 +406,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.body,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 20,
   },
   badge: {
@@ -394,7 +417,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: FontFamily.body,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardMeta: {
     fontFamily: FontFamily.body,
@@ -402,7 +425,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   actionsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   actionBtn: {
@@ -410,8 +433,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 40,
   },
   actionBtnDisabled: {
@@ -420,11 +443,11 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontFamily: FontFamily.body,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   deleteBtn: {
     borderColor: Brand.primary,
-    backgroundColor: 'rgba(196, 69, 54, 0.08)',
+    backgroundColor: "rgba(196, 69, 54, 0.08)",
   },
   deleteBtnText: {
     color: Brand.primary,
@@ -437,10 +460,10 @@ const styles = StyleSheet.create({
   },
   placeholderBox: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(107, 124, 110, 0.35)',
+    borderColor: "rgba(107, 124, 110, 0.35)",
     borderRadius: 12,
     padding: 16,
-    backgroundColor: 'rgba(107, 124, 110, 0.06)',
+    backgroundColor: "rgba(107, 124, 110, 0.06)",
   },
   placeholderTitle: {
     fontFamily: FontFamily.titleBold,
