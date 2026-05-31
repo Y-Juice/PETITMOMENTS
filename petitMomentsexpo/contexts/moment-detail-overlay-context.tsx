@@ -28,13 +28,14 @@ import { feedbackSelectionTap } from "@/utils/feedback";
 import { ContentWarningGate } from "@/components/content-warning-gate";
 import { ReportContentButton } from "@/components/report-content-button";
 import { VoteWidget } from "@/components/vote-widget";
+import { getCardColorsForId, isPaletteOnDark } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useMoments } from "@/contexts/moments-context";
 import { useSaves } from "@/contexts/saves-context";
 import { useVotes } from "@/contexts/votes-context";
 import { hasContentWarning } from "@/data/moderation";
 
-const CARD_BG = "#C84E3D";
+const FALLBACK_BG = "#C84E3D";
 const BADGE_FG = "#1A1A1A";
 const DIM_OVERLAY = "rgba(0, 0, 0, 0.42)";
 
@@ -100,6 +101,12 @@ export function MomentDetailOverlayProvider({
   const saved = moment ? isMomentSaved(moment.id) : false;
   const voteSummary = moment ? momentSummary(moment.id) : null;
   const myVote = moment ? myMomentVote(moment.id) : null;
+  const palette = moment ? getCardColorsForId(moment.id) : null;
+  const cardBg = palette?.bg ?? FALLBACK_BG;
+  const textColor = palette?.text ?? "#FFFFFF";
+  const subColor = palette?.sub ?? "rgba(255,255,255,0.92)";
+  const onDark = palette ? isPaletteOnDark(palette) : true;
+  const surfaceColor = onDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.10)";
 
   const onToggleSave = useCallback(async () => {
     if (!moment || savingToggle) return;
@@ -201,14 +208,16 @@ export function MomentDetailOverlayProvider({
                       transform: [{ scale: 0.96 }],
                     })}
                     style={styles.cardShadow}>
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: cardBg }]}>
                       <View style={styles.titleRow}>
-                        <Text style={styles.title}>{moment.title}</Text>
+                        <Text style={[styles.title, { color: textColor }]}>
+                          {moment.title}
+                        </Text>
                         <ReportContentButton
                           targetType="moment"
                           targetId={moment.id}
                           targetLabel={moment.title}
-                          iconColor="#FFFFFF"
+                          iconColor={textColor}
                         />
                       </View>
 
@@ -220,8 +229,8 @@ export function MomentDetailOverlayProvider({
                             onUp={() => void voteOnMoment(moment.id, "up")}
                             onDown={() => void voteOnMoment(moment.id, "down")}
                             size="large"
-                            baseColor="#FFFFFF"
-                            surfaceColor="rgba(255,255,255,0.18)"
+                            baseColor={textColor}
+                            surfaceColor={surfaceColor}
                           />
                         </View>
                       ) : null}
@@ -243,14 +252,19 @@ export function MomentDetailOverlayProvider({
                               <MaterialIcons
                                 name="image-not-supported"
                                 size={40}
-                                color="rgba(255,255,255,0.5)"
+                                color={textColor}
                               />
-                              <Text style={styles.photoPlaceholderText}>
+                              <Text
+                                style={[
+                                  styles.photoPlaceholderText,
+                                  { color: subColor },
+                                ]}
+                              >
                                 Geen foto
                               </Text>
                             </View>
                           )}
-                          <Text style={styles.description}>
+                          <Text style={[styles.description, { color: textColor }]}>
                             {moment.description}
                           </Text>
                         </ContentWarningGate>
@@ -268,14 +282,19 @@ export function MomentDetailOverlayProvider({
                               <MaterialIcons
                                 name="image-not-supported"
                                 size={40}
-                                color="rgba(255,255,255,0.5)"
+                                color={textColor}
                               />
-                              <Text style={styles.photoPlaceholderText}>
+                              <Text
+                                style={[
+                                  styles.photoPlaceholderText,
+                                  { color: subColor },
+                                ]}
+                              >
                                 Geen foto
                               </Text>
                             </View>
                           )}
-                          <Text style={styles.description}>
+                          <Text style={[styles.description, { color: textColor }]}>
                             {moment.description}
                           </Text>
                         </>
@@ -285,6 +304,7 @@ export function MomentDetailOverlayProvider({
                         onPress={onFollowOnMap}
                         style={({ pressed }) => [
                           styles.followBtn,
+                          { backgroundColor: textColor },
                           pressed && styles.followBtnPressed,
                         ]}
                         accessibilityRole="button"
@@ -293,9 +313,11 @@ export function MomentDetailOverlayProvider({
                         <MaterialIcons
                           name="navigation"
                           size={20}
-                          color={CARD_BG}
+                          color={cardBg}
                         />
-                        <Text style={styles.followBtnText}>Volg op kaart</Text>
+                        <Text style={[styles.followBtnText, { color: cardBg }]}>
+                          Volg op kaart
+                        </Text>
                       </Pressable>
 
                       <Pressable
@@ -303,7 +325,8 @@ export function MomentDetailOverlayProvider({
                         disabled={savingToggle}
                         style={({ pressed }) => [
                           styles.saveBtn,
-                          saved && styles.saveBtnActive,
+                          { borderColor: textColor },
+                          saved && { backgroundColor: surfaceColor },
                           pressed && styles.saveBtnPressed,
                           savingToggle && styles.saveBtnDisabled,
                         ]}
@@ -316,22 +339,22 @@ export function MomentDetailOverlayProvider({
                         }
                       >
                         {savingToggle ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
+                          <ActivityIndicator size="small" color={textColor} />
                         ) : (
                           <>
                             <MaterialIcons
                               name={saved ? "bookmark" : "bookmark-border"}
                               size={20}
-                              color="#FFFFFF"
+                              color={textColor}
                             />
-                            <Text style={styles.saveBtnText}>
+                            <Text style={[styles.saveBtnText, { color: textColor }]}>
                               {saved ? "Bewaard" : "Bewaar"}
                             </Text>
                           </>
                         )}
                       </Pressable>
 
-                      <Text style={styles.footer}>
+                      <Text style={[styles.footer, { color: subColor }]}>
                         {moment.username}, {moment.location.label}
                       </Text>
                     </View>
@@ -412,7 +435,6 @@ const styles = StyleSheet.create({
       : {}),
   },
   card: {
-    backgroundColor: CARD_BG,
     borderRadius: 40,
     paddingHorizontal: 28,
     paddingTop: 28,
@@ -420,7 +442,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   stateCard: {
-    backgroundColor: CARD_BG,
+    backgroundColor: FALLBACK_BG,
     borderRadius: 40,
     padding: 36,
     minHeight: 160,
@@ -525,7 +547,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 15,
     fontWeight: "700",
-    color: CARD_BG,
   },
   saveBtn: {
     alignSelf: "flex-start",

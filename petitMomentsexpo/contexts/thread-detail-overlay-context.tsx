@@ -26,7 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ContentWarningGate } from "@/components/content-warning-gate";
 import { ReportContentButton } from "@/components/report-content-button";
 import { VoteWidget } from "@/components/vote-widget";
-import { Brand } from "@/constants/theme";
+import { getCardColorsForId, isPaletteOnDark } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useSaves } from "@/contexts/saves-context";
 import { useThreads } from "@/contexts/threads-context";
@@ -34,7 +34,7 @@ import { useVotes } from "@/contexts/votes-context";
 import { hasContentWarning } from "@/data/moderation";
 import { feedbackSelectionTap } from "@/utils/feedback";
 
-const CARD_BG = Brand.accent;
+const FALLBACK_BG = "#9236C4";
 const DIM_OVERLAY = "rgba(0, 0, 0, 0.42)";
 
 type ThreadDetailOverlayValue = {
@@ -100,6 +100,11 @@ export function ThreadDetailOverlayProvider({
   const voteSummary = thread ? threadSummary(thread.id) : null;
   const myVote = thread ? myThreadVote(thread.id) : null;
   const momentCount = thread?.momentIds?.length ?? 0;
+  const palette = thread ? getCardColorsForId(thread.id) : null;
+  const cardBg = palette?.bg ?? FALLBACK_BG;
+  const textColor = palette?.text ?? "#FFFFFF";
+  const onDark = palette ? isPaletteOnDark(palette) : true;
+  const surfaceColor = onDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.10)";
 
   const onToggleSave = useCallback(async () => {
     if (!thread || savingToggle) return;
@@ -212,23 +217,29 @@ export function ThreadDetailOverlayProvider({
                     })}
                     style={styles.cardShadow}
                   >
-                    <View style={styles.card}>
-                      <View style={styles.tagRow}>
+                    <View style={[styles.card, { backgroundColor: cardBg }]}>
+                      <View
+                        style={[styles.tagRow, { backgroundColor: surfaceColor }]}
+                      >
                         <MaterialIcons
                           name="timeline"
                           size={16}
-                          color="#FFFFFF"
+                          color={textColor}
                         />
-                        <Text style={styles.tagText}>Rode draad</Text>
+                        <Text style={[styles.tagText, { color: textColor }]}>
+                          Rode draad
+                        </Text>
                       </View>
 
                       <View style={styles.titleRow}>
-                        <Text style={styles.title}>{thread.title}</Text>
+                        <Text style={[styles.title, { color: textColor }]}>
+                          {thread.title}
+                        </Text>
                         <ReportContentButton
                           targetType="thread"
                           targetId={thread.id}
                           targetLabel={thread.title}
-                          iconColor="#FFFFFF"
+                          iconColor={textColor}
                         />
                       </View>
 
@@ -240,40 +251,46 @@ export function ThreadDetailOverlayProvider({
                             onUp={() => void voteOnThread(thread.id, "up")}
                             onDown={() => void voteOnThread(thread.id, "down")}
                             size="large"
-                            baseColor="#FFFFFF"
-                            surfaceColor="rgba(255,255,255,0.18)"
+                            baseColor={textColor}
+                            surfaceColor={surfaceColor}
                           />
                         </View>
                       ) : null}
 
                       <View style={styles.statsRow}>
-                        <View style={styles.statBox}>
+                        <View
+                          style={[styles.statBox, { backgroundColor: surfaceColor }]}
+                        >
                           <MaterialIcons
                             name="thumb-up"
                             size={16}
-                            color="#FFFFFF"
+                            color={textColor}
                           />
-                          <Text style={styles.statText}>
+                          <Text style={[styles.statText, { color: textColor }]}>
                             {voteSummary?.up ?? 0} upvotes
                           </Text>
                         </View>
-                        <View style={styles.statBox}>
+                        <View
+                          style={[styles.statBox, { backgroundColor: surfaceColor }]}
+                        >
                           <MaterialIcons
                             name="thumb-down"
                             size={16}
-                            color="#FFFFFF"
+                            color={textColor}
                           />
-                          <Text style={styles.statText}>
+                          <Text style={[styles.statText, { color: textColor }]}>
                             {voteSummary?.down ?? 0} downvotes
                           </Text>
                         </View>
-                        <View style={styles.statBox}>
+                        <View
+                          style={[styles.statBox, { backgroundColor: surfaceColor }]}
+                        >
                           <MaterialIcons
                             name="place"
                             size={16}
-                            color="#FFFFFF"
+                            color={textColor}
                           />
-                          <Text style={styles.statText}>
+                          <Text style={[styles.statText, { color: textColor }]}>
                             {momentCount} momenten
                           </Text>
                         </View>
@@ -285,10 +302,16 @@ export function ThreadDetailOverlayProvider({
                             item={thread}
                             style={styles.warningBlock}
                           >
-                            <Text style={styles.description}>{thread.body}</Text>
+                            <Text
+                              style={[styles.description, { color: textColor }]}
+                            >
+                              {thread.body}
+                            </Text>
                           </ContentWarningGate>
                         ) : (
-                          <Text style={styles.description}>{thread.body}</Text>
+                          <Text style={[styles.description, { color: textColor }]}>
+                            {thread.body}
+                          </Text>
                         )
                       ) : null}
 
@@ -296,23 +319,23 @@ export function ThreadDetailOverlayProvider({
                         onPress={onShowOnMap}
                         style={({ pressed }) => [
                           styles.mapBtn,
+                          { backgroundColor: textColor },
                           pressed && styles.mapBtnPressed,
                         ]}
                         accessibilityRole="button"
                         accessibilityLabel="Toon deze rode draad op de kaart"
                       >
-                        <MaterialIcons
-                          name="map"
-                          size={20}
-                          color={Brand.accent}
-                        />
-                        <Text style={styles.mapBtnText}>Toon op kaart</Text>
+                        <MaterialIcons name="map" size={20} color={cardBg} />
+                        <Text style={[styles.mapBtnText, { color: cardBg }]}>
+                          Toon op kaart
+                        </Text>
                       </Pressable>
 
                       <Pressable
                         onPress={onFollowRoute}
                         style={({ pressed }) => [
                           styles.followBtn,
+                          { borderColor: textColor, backgroundColor: surfaceColor },
                           pressed && styles.mapBtnPressed,
                         ]}
                         accessibilityRole="button"
@@ -321,9 +344,11 @@ export function ThreadDetailOverlayProvider({
                         <MaterialIcons
                           name="navigation"
                           size={20}
-                          color="#FFFFFF"
+                          color={textColor}
                         />
-                        <Text style={styles.followBtnText}>Volg route</Text>
+                        <Text style={[styles.followBtnText, { color: textColor }]}>
+                          Volg route
+                        </Text>
                       </Pressable>
 
                       <Pressable
@@ -331,7 +356,8 @@ export function ThreadDetailOverlayProvider({
                         disabled={savingToggle}
                         style={({ pressed }) => [
                           styles.saveBtn,
-                          saved && styles.saveBtnActive,
+                          { borderColor: textColor },
+                          saved && { backgroundColor: surfaceColor },
                           pressed && styles.saveBtnPressed,
                           savingToggle && styles.saveBtnDisabled,
                         ]}
@@ -344,15 +370,15 @@ export function ThreadDetailOverlayProvider({
                         }
                       >
                         {savingToggle ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
+                          <ActivityIndicator size="small" color={textColor} />
                         ) : (
                           <>
                             <MaterialIcons
                               name={saved ? "bookmark" : "bookmark-border"}
                               size={20}
-                              color="#FFFFFF"
+                              color={textColor}
                             />
-                            <Text style={styles.saveBtnText}>
+                            <Text style={[styles.saveBtnText, { color: textColor }]}>
                               {saved ? "Bewaard" : "Bewaar"}
                             </Text>
                           </>
@@ -436,7 +462,6 @@ const styles = StyleSheet.create({
       : {}),
   },
   card: {
-    backgroundColor: CARD_BG,
     borderRadius: 40,
     paddingHorizontal: 28,
     paddingTop: 22,
@@ -444,7 +469,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   stateCard: {
-    backgroundColor: CARD_BG,
+    backgroundColor: FALLBACK_BG,
     borderRadius: 40,
     padding: 36,
     minHeight: 160,
@@ -547,7 +572,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: 15,
     fontWeight: "700",
-    color: Brand.accent,
   },
   followBtn: {
     flexDirection: "row",

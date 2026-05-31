@@ -17,22 +17,54 @@ export const Brand = {
 export type MomentCardPalette = { bg: string; text: string; sub: string };
 
 const CARD_TEXT_ON_DARK = { text: '#FFFFFF' as const, sub: 'rgba(255,255,255,0.9)' as const };
-const CARD_TEXT_ON_YELLOW = {
+const CARD_TEXT_ON_LIGHT = {
   text: Brand.textLight,
   sub: 'rgba(39, 39, 39, 0.75)',
 } as const;
 
 export const MOMENT_CARD_COLOR_SEQUENCE: MomentCardPalette[] = [
-  { bg: Brand.accent, ...CARD_TEXT_ON_DARK },
-  { bg: Brand.primary, ...CARD_TEXT_ON_DARK },
-  { bg: '#F5D742', ...CARD_TEXT_ON_YELLOW },
-  { bg: Brand.neutral, ...CARD_TEXT_ON_DARK },
-  { bg: Brand.secondary, ...CARD_TEXT_ON_DARK },
+  { bg: Brand.accent, ...CARD_TEXT_ON_DARK }, // paars
+  { bg: Brand.primary, ...CARD_TEXT_ON_DARK }, // rood
+  { bg: '#F5D742', ...CARD_TEXT_ON_LIGHT }, // geel
+  { bg: Brand.neutral, ...CARD_TEXT_ON_DARK }, // grijsgroen
+  { bg: Brand.secondary, ...CARD_TEXT_ON_DARK }, // oranje
+  { bg: '#2A9D8F', ...CARD_TEXT_ON_DARK }, // teal
+  { bg: '#2D6CDF', ...CARD_TEXT_ON_DARK }, // blauw
+  { bg: '#E25C8B', ...CARD_TEXT_ON_DARK }, // roze
+  { bg: '#2E7D52', ...CARD_TEXT_ON_DARK }, // bosgroen
+  { bg: '#5B5BD6', ...CARD_TEXT_ON_DARK }, // indigo
+  { bg: '#C77DFF', ...CARD_TEXT_ON_DARK }, // lila
+  { bg: '#E08A3C', ...CARD_TEXT_ON_DARK }, // amber
+  { bg: '#6FC3DF', ...CARD_TEXT_ON_LIGHT }, // lichtblauw
+  { bg: '#7FD1AE', ...CARD_TEXT_ON_LIGHT }, // mint
+  { bg: '#F2A6C0', ...CARD_TEXT_ON_LIGHT }, // zachtroze
 ];
 
 export function getMomentCardColors(colorIndex: number): MomentCardPalette {
   const n = MOMENT_CARD_COLOR_SEQUENCE.length;
   return MOMENT_CARD_COLOR_SEQUENCE[colorIndex % n];
+}
+
+/**
+ * Kleur-index die altijd hetzelfde is voor een bepaald id (simpele hash).
+ * Zo krijgt een moment of discussie overal dezelfde kaartkleur, ook in de
+ * detailweergave.
+ */
+export function getCardColorIndexForId(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 1000000007;
+  }
+  return Math.abs(hash) % MOMENT_CARD_COLOR_SEQUENCE.length;
+}
+
+export function getCardColorsForId(id: string): MomentCardPalette {
+  return MOMENT_CARD_COLOR_SEQUENCE[getCardColorIndexForId(id)];
+}
+
+/** True als de tekstkleur van het palet wit is (donkere achtergrond). */
+export function isPaletteOnDark(palette: MomentCardPalette): boolean {
+  return palette.text === "#FFFFFF";
 }
 
 export const Colors = {

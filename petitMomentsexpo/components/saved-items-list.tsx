@@ -11,7 +11,7 @@ import {
 
 import { MomentCard } from "@/components/moment-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Brand, getMomentCardColors } from "@/constants/theme";
+import { Brand, getCardColorsForId } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useAuth } from "@/contexts/auth-context";
 import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
@@ -119,7 +119,6 @@ export function SavedItemsList() {
               <MomentCard
                 key={moment.id}
                 moment={moment}
-                colorIndex={index}
                 position={position}
                 onPress={() => presentMomentById(moment.id)}
               />
@@ -138,8 +137,8 @@ export function SavedItemsList() {
         </Text>
       ) : (
         <View style={styles.threadList}>
-          {savedThreads.map((thread, index) => {
-            const palette = getMomentCardColors(index);
+          {savedThreads.map((thread) => {
+            const palette = getCardColorsForId(thread.id);
             const isBusy = busyId === thread.id;
             const preview =
               thread.body.length > 160

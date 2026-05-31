@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { MomentCard } from "@/components/moment-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Brand, getMomentCardColors } from "@/constants/theme";
+import { Brand, getCardColorsForId } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useAuth } from "@/contexts/auth-context";
 import { useMomentDetailOverlay } from "@/contexts/moment-detail-overlay-context";
@@ -106,7 +106,6 @@ export function VotedItemsList({ direction }: Props) {
               <MomentCard
                 key={moment.id}
                 moment={moment}
-                colorIndex={index}
                 position={position}
                 onPress={() => presentMomentById(moment.id)}
               />
@@ -124,8 +123,8 @@ export function VotedItemsList({ direction }: Props) {
         </Text>
       ) : (
         <View style={styles.threadList}>
-          {votedThreads.map((thread, index) => {
-            const palette = getMomentCardColors(index);
+          {votedThreads.map((thread) => {
+            const palette = getCardColorsForId(thread.id);
             const preview =
               thread.body.length > 160
                 ? `${thread.body.slice(0, 157).trimEnd()}...`

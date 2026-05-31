@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ContentWarningBadge } from "@/components/content-warning-gate";
 import { VoteWidget } from "@/components/vote-widget";
-import { getMomentCardColors } from "@/constants/theme";
+import { getCardColorsForId } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useVotes } from "@/contexts/votes-context";
 import type { Moment } from "@/data/mockMoments";
@@ -10,14 +10,12 @@ import { hasContentWarning } from "@/data/moderation";
 
 type Props = {
   moment: Moment;
-  /** List index (0-based); drives red → green → blue cycling. */
-  colorIndex: number;
   position: "first" | "middle" | "last" | "single";
   onPress?: () => void;
 };
 
-export function MomentCard({ moment, colorIndex, position, onPress }: Props) {
-  const colors = getMomentCardColors(colorIndex);
+export function MomentCard({ moment, position, onPress }: Props) {
+  const colors = getCardColorsForId(moment.id);
   const { momentSummary, myMomentVote, voteOnMoment } = useVotes();
   const summary = momentSummary(moment.id);
   const myVote = myMomentVote(moment.id);

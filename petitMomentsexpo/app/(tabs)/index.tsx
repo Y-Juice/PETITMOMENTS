@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import HomeMapPreview from "@/components/home-map-preview";
 import { MomentCard } from "@/components/moment-card";
-import { ThreadRow } from "@/components/thread-row";
+import { ThreadCard } from "@/components/thread-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { Reveal } from "@/components/ui/reveal";
@@ -62,16 +62,14 @@ export default function HomeScreen() {
   const backgroundColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
   const muted = useThemeColor({}, "icon");
-  const welcomeCardBg = useThemeColor(
-    { light: "rgba(196, 69, 54, 0.08)", dark: "rgba(196, 69, 54, 0.16)" },
-    "background",
-  );
-  const welcomeBorder = useThemeColor(
-    { light: Brand.neutral, dark: "#3D3832" },
-    "text",
-  );
-
   const userEmail = session?.user?.email ?? "";
+  const userMeta = session?.user?.user_metadata as
+    | { username?: string; display_name?: string }
+    | undefined;
+  const username =
+    userMeta?.username?.trim() ||
+    userMeta?.display_name?.trim() ||
+    (userEmail ? userEmail.split("@")[0] : "");
 
   useEffect(() => {
     let cancelled = false;
@@ -132,26 +130,16 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <HomeMapPreview />
-
-        <View
-          style={[
-            styles.welcomeCard,
-            { backgroundColor: welcomeCardBg, borderColor: welcomeBorder },
-          ]}
-        >
-          <Text style={[styles.welcomeTitle, { color: textColor }]}>
-            Welkom terug
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeTitle}>
+            Welkom terug{username ? `, ${username}` : ""}!
           </Text>
-          <Text style={[styles.welcomeSub, { color: muted }]}>
+          <Text style={styles.welcomeSub}>
             Ontdek momenten in de buurt en de nieuwste discussies.
           </Text>
-          {userEmail ? (
-            <Text style={[styles.welcomeEmail, { color: textColor }]}>
-              {userEmail}
-            </Text>
-          ) : null}
         </View>
+
+        <HomeMapPreview />
 
         {threadsLoadError ? (
           <View style={styles.bannerWrap}>
@@ -177,13 +165,30 @@ export default function HomeScreen() {
               message="Maak een rode draad op de kaart om de eerste discussie te starten."
             />
           ) : (
-            <View style={styles.threadList}>
-              {threads.map((thread, index) => (
-                <Reveal key={thread.id} index={index}>
-                  <ThreadRow thread={thread} />
-                </Reveal>
-              ))}
-            </View>
+            <Reveal style={styles.threadGrid}>
+              <View style={styles.threadColumn}>
+                {threads
+                  .filter((_, index) => index % 2 === 0)
+                  .map((thread, index) => (
+                    <ThreadCard
+                      key={thread.id}
+                      thread={thread}
+                      style={index === 0 ? undefined : styles.threadCardStacked}
+                    />
+                  ))}
+              </View>
+              <View style={styles.threadColumn}>
+                {threads
+                  .filter((_, index) => index % 2 === 1)
+                  .map((thread, index) => (
+                    <ThreadCard
+                      key={thread.id}
+                      thread={thread}
+                      style={index === 0 ? undefined : styles.threadCardStacked}
+                    />
+                  ))}
+              </View>
+            </Reveal>
           )}
         </View>
 
@@ -224,7 +229,6 @@ export default function HomeScreen() {
                   <MomentCard
                     key={moment.id}
                     moment={moment}
-                    colorIndex={index}
                     position={position}
                     onPress={() => presentMomentById(moment.id)}
                   />
@@ -251,27 +255,28 @@ const styles = StyleSheet.create({
   },
   welcomeCard: {
     marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: Brand.primary,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 5,
   },
   welcomeTitle: {
     fontFamily: FontFamily.titleBold,
     fontSize: 22,
-    marginBottom: 8,
+    marginBottom: 6,
+    color: "#FFFFFF",
   },
   welcomeSub: {
     fontFamily: FontFamily.body,
     fontSize: 15,
     lineHeight: 21,
-    marginBottom: 10,
-  },
-  welcomeEmail: {
-    fontFamily: FontFamily.body,
-    fontSize: 14,
-    fontWeight: "600",
-    opacity: 0.95,
+    color: "rgba(255,255,255,0.9)",
   },
   listWrap: {
     paddingTop: 50,
@@ -289,8 +294,16 @@ const styles = StyleSheet.create({
   segmentState: {
     paddingVertical: 8,
   },
-  threadList: {
+  threadGrid: {
+    flexDirection: "row",
+    gap: 12,
     paddingBottom: 8,
+  },
+  threadColumn: {
+    flex: 1,
+  },
+  threadCardStacked: {
+    marginTop: -34,
   },
   stateText: {
     fontFamily: FontFamily.body,
