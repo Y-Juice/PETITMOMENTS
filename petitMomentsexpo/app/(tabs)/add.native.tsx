@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useMoments } from '@/contexts/moments-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { feedbackSelectionTap, feedbackUploadSuccess } from '@/utils/feedback';
-import { insertMomentInSupabase } from '@/utils/moments-supabase';
+import { insertMomentInSupabase, uploadMomentImage } from '@/utils/moments-supabase';
 
 const DEFAULT_COORDINATE = {
   latitude: 50.8503,
@@ -39,6 +39,7 @@ export default function AddMomentScreenNative() {
   const { addMoment } = useMoments();
 
   const [imageUri, setImageUri] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
   const [description, setDescription] = useState('');
   const [locationSearch, setLocationSearch] = useState('');
   const [locationLabel, setLocationLabel] = useState('');
@@ -67,10 +68,12 @@ export default function AddMomentScreenNative() {
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
+      setImageBase64(result.assets[0].base64 ?? '');
     }
   };
 
@@ -161,6 +164,7 @@ export default function AddMomentScreenNative() {
 
   const resetForm = () => {
     setImageUri('');
+    setImageBase64('');
     setDescription('');
     setLocationSearch('');
     setLocationLabel('');
@@ -207,8 +211,15 @@ export default function AddMomentScreenNative() {
     const username = session?.user?.email?.split('@')[0] ?? 'Gebruiker';
     setIsSubmitting(true);
 
+    const { url: uploadedUrl, error: uploadError } = await uploadMomentImage(imageBase64);
+    if (uploadError || !uploadedUrl) {
+      setIsSubmitting(false);
+      Alert.alert('Foto uploaden mislukt', uploadError ?? 'Kon de foto niet uploaden.');
+      return;
+    }
+
     const { id: supabaseId, error } = await insertMomentInSupabase({
-      mediaUrl: imageUri,
+      mediaUrl: uploadedUrl,
       caption: trimmedText,
       address: trimmedLabel,
       latitude: parsedLat,
@@ -226,7 +237,7 @@ export default function AddMomentScreenNative() {
       id: supabaseId ?? undefined,
       username,
       description: trimmedText,
-      imageUrl: imageUri,
+      imageUrl: uploadedUrl,
       locationLabel: trimmedLabel,
       latitude: parsedLat,
       longitude: parsedLng,

@@ -9,7 +9,7 @@ import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
 import { useMoments } from '@/contexts/moments-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { insertMomentInSupabase } from '@/utils/moments-supabase';
+import { insertMomentInSupabase, uploadMomentImage } from '@/utils/moments-supabase';
 
 export default function AddMomentScreenWeb() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function AddMomentScreenWeb() {
   const { addMoment } = useMoments();
 
   const [imageUri, setImageUri] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
   const [description, setDescription] = useState('');
   const [locationLabel, setLocationLabel] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -41,15 +42,18 @@ export default function AddMomentScreenWeb() {
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
+      setImageBase64(result.assets[0].base64 ?? '');
     }
   };
 
   const resetForm = () => {
     setImageUri('');
+    setImageBase64('');
     setDescription('');
     setLocationLabel('');
     setLatitude('');
@@ -94,8 +98,15 @@ export default function AddMomentScreenWeb() {
     const username = session?.user?.email?.split('@')[0] ?? 'Gebruiker';
     setIsSubmitting(true);
 
+    const { url: uploadedUrl, error: uploadError } = await uploadMomentImage(imageBase64);
+    if (uploadError || !uploadedUrl) {
+      setIsSubmitting(false);
+      Alert.alert('Foto uploaden mislukt', uploadError ?? 'Kon de foto niet uploaden.');
+      return;
+    }
+
     const { id: supabaseId, error } = await insertMomentInSupabase({
-      mediaUrl: imageUri,
+      mediaUrl: uploadedUrl,
       caption: trimmedText,
       address: trimmedLabel,
       latitude: parsedLat,
@@ -113,7 +124,7 @@ export default function AddMomentScreenWeb() {
       id: supabaseId ?? undefined,
       username,
       description: trimmedText,
-      imageUrl: imageUri,
+      imageUrl: uploadedUrl,
       locationLabel: trimmedLabel,
       latitude: parsedLat,
       longitude: parsedLng,

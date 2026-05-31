@@ -1,5 +1,75 @@
 import { supabase } from "@/utils/supabase";
 
+/** Publieke storage bucket waarin de foto's van momenten staan. */
+const MOMENTS_BUCKET = "moments";
+
+type UploadImageResult = {
+  url: string | null;
+  error: string | null;
+};
+
+/** Zet een base64 string om naar bytes (atob bestaat op web en in Hermes). */
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Upload de gekozen foto naar Supabase Storage en geef de publieke URL terug.
+ * We slaan de publieke URL op in moments.media_url, niet de lokale file:// uri,
+ * zodat de afbeelding ook na herladen en op andere toestellen zichtbaar blijft.
+ */
+export async function uploadMomentImage(
+  base64: string,
+): Promise<UploadImageResult> {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user?.id) {
+    return {
+      url: null,
+      error: "Je bent niet (meer) ingelogd. Log opnieuw in en probeer opnieuw.",
+    };
+  }
+
+  if (!base64) {
+    return { url: null, error: "Kon de foto niet lezen. Kies de foto opnieuw." };
+  }
+
+  const bytes = base64ToBytes(base64);
+  const path = `${authData.user.id}/${Date.now()}.jpg`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(MOMENTS_BUCKET)
+    .upload(path, bytes, { contentType: "image/jpeg", upsert: false });
+
+  if (uploadError) {
+    const message = uploadError.message ?? "";
+    const lower = message.toLowerCase();
+    if (lower.includes("bucket not found")) {
+      return {
+        url: null,
+        error: `De storage bucket '${MOMENTS_BUCKET}' bestaat niet. Maak in Supabase Storage een publieke bucket met die naam aan.`,
+      };
+    }
+    if (lower.includes("policy") || lower.includes("row-level security")) {
+      return {
+        url: null,
+        error: `RLS blokkeert de upload. Voeg een INSERT policy toe op storage.objects voor de bucket '${MOMENTS_BUCKET}' (authenticated users).`,
+      };
+    }
+    return { url: null, error: message || "Kon de foto niet uploaden." };
+  }
+
+  const { data: publicData } = supabase.storage
+    .from(MOMENTS_BUCKET)
+    .getPublicUrl(path);
+
+  return { url: publicData?.publicUrl ?? null, error: null };
+}
+
 type InsertMomentInput = {
   mediaUrl: string;
   caption: string;
