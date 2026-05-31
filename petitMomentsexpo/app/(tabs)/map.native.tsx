@@ -255,7 +255,7 @@ export default function MapScreenNative() {
       await refreshThreads();
       Alert.alert(
         "Opgeslagen",
-        "Je rode draad staat bij Discussies op de homepagina.",
+        "Je rode draad staat bij Rode Draden op de homepagina.",
       );
       exitCompose();
     } finally {

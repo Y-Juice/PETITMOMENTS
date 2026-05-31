@@ -135,7 +135,7 @@ export default function HomeScreen() {
             Welkom terug{username ? `, ${username}` : ""}!
           </Text>
           <Text style={styles.welcomeSub}>
-            Ontdek momenten in de buurt en de nieuwste discussies.
+            Ontdek momenten in de buurt en de nieuwste rode draden.
           </Text>
         </View>
 
@@ -149,20 +149,20 @@ export default function HomeScreen() {
 
         <View style={styles.segment}>
           <Text style={[styles.segmentTitle, { color: textColor }]}>
-            Discussies
+            Rode Draden
           </Text>
           {threadsLoading ? (
             <View style={styles.segmentState}>
               <Text style={[styles.stateText, { color: muted }]}>
-                Discussies laden...
+                Rode draden laden...
               </Text>
             </View>
           ) : threads.length === 0 ? (
             <EmptyState
               compact
               icon="forum"
-              title="Nog geen discussies"
-              message="Maak een rode draad op de kaart om de eerste discussie te starten."
+              title="Nog geen rode draden"
+              message="Maak een rode draad op de kaart om de eerste rode draad te starten."
             />
           ) : (
             <Reveal style={styles.threadGrid}>

@@ -72,7 +72,7 @@ export function AdminReportRow({ report }: AdminReportRowProps) {
       <View style={styles.headerRow}>
         <View style={styles.typeBadge}>
           <Text style={styles.typeBadgeText}>
-            {report.targetType === 'moment' ? 'Moment' : 'Discussie'}
+            {report.targetType === 'moment' ? 'Moment' : 'Rode draad'}
           </Text>
         </View>
         <View style={[styles.statusBadge, statusStyle(report.status)]}>

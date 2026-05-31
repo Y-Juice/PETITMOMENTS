@@ -69,7 +69,7 @@ function momentIdsFromRow(row: Record<string, unknown>): string[] | undefined {
 }
 
 function rowToThread(row: Record<string, unknown>): ThreadItem {
-  const title = String(row.title ?? '').trim() || 'Discussie'
+  const title = String(row.title ?? '').trim() || 'Rode draad'
   const body = String(row.body ?? row.content ?? row.message ?? row.description ?? '').trim()
   const createdRaw = row.created_at
   const createdAt =
@@ -162,7 +162,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       setThreads([])
       setLoading(false)
       setLoadError(
-        `Kon discussies niet laden: ${lastMessage}. Zorg dat de tabel threads bestaat en RLS SELECT toestaat voor ingelogde gebruikers.`
+        `Kon rode draden niet laden: ${lastMessage}. Zorg dat de tabel threads bestaat en RLS SELECT toestaat voor ingelogde gebruikers.`
       )
       return
     }

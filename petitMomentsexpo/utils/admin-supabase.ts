@@ -157,7 +157,7 @@ async function fetchTargetMeta(
 
     const title = String(row.title ?? row.description ?? '').trim();
     return {
-      title: title || 'Discussie',
+      title: title || 'Rode draad',
       moderationStatus: parseModerationStatus(row.moderation_status),
     };
   }

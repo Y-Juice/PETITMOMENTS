@@ -114,7 +114,7 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
   const toggleThreadSave = useCallback(
     async (id: string) => {
       if (!session?.user?.id) {
-        return { error: 'Log in om discussies te bewaren.' }
+        return { error: 'Log in om rode draden te bewaren.' }
       }
       const wasSaved = savedThreadIds.has(id)
 

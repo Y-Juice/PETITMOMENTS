@@ -55,8 +55,8 @@ const SLIDES: Slide[] = [
   },
   {
     id: 'thread',
-    title: 'Rode draad & discussies',
-    body: 'Verbind momenten met een route op de kaart en start een discussie.',
+    title: 'Rode draden',
+    body: 'Verbind momenten met een route op de kaart en start een rode draad.',
     icon: 'timeline',
     colorIndex: 4,
   },

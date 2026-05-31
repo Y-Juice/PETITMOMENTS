@@ -22,7 +22,7 @@ type Props = {
 };
 
 /**
- * Vierkante discussiekaart voor de 2-koloms stapel op de homepagina.
+ * Vierkante rode-draadkaart voor de 2-koloms stapel op de homepagina.
  * Toont enkel titel, aantal momenten en de score. Stemmen kan pas in de
  * detailweergave (die je opent door op de kaart te tikken).
  */
@@ -46,7 +46,7 @@ export function ThreadCard({ thread, style }: Props) {
         style,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Open discussie ${thread.title}`}
+      accessibilityLabel={`Open rode draad ${thread.title}`}
     >
       <View style={styles.tagRow}>
         <MaterialIcons name="timeline" size={14} color={palette.text} />

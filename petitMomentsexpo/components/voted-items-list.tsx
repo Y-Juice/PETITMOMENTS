@@ -69,7 +69,7 @@ export function VotedItemsList({ direction }: Props) {
       <EmptyState
         icon={direction === "up" ? "thumb-up-off-alt" : "thumb-down-off-alt"}
         title={`Nog niets ${labelWord}`}
-        message="Gebruik de pijl-knoppen op een moment of discussie om hier dingen te verzamelen."
+        message="Gebruik de pijl-knoppen op een moment of rode draad om hier dingen te verzamelen."
       />
     );
   }
@@ -115,11 +115,11 @@ export function VotedItemsList({ direction }: Props) {
       )}
 
       <Text style={[styles.sectionLabel, { color: textColor }]}>
-        Discussies ({votedThreads.length})
+        Rode Draden ({votedThreads.length})
       </Text>
       {votedThreads.length === 0 ? (
         <Text style={[styles.emptyText, { color: muted }]}>
-          Nog geen discussies {labelWord}.
+          Nog geen rode draden {labelWord}.
         </Text>
       ) : (
         <View style={styles.threadList}>

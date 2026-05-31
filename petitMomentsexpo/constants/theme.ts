@@ -47,7 +47,7 @@ export function getMomentCardColors(colorIndex: number): MomentCardPalette {
 
 /**
  * Kleur-index die altijd hetzelfde is voor een bepaald id (simpele hash).
- * Zo krijgt een moment of discussie overal dezelfde kaartkleur, ook in de
+ * Zo krijgt een moment of rode draad overal dezelfde kaartkleur, ook in de
  * detailweergave.
  */
 export function getCardColorIndexForId(id: string): number {

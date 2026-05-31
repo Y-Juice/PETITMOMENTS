@@ -81,7 +81,7 @@ export function SavedItemsList() {
       <EmptyState
         icon="bookmark-border"
         title="Nog niets opgeslagen"
-        message="Tik op het bladwijzer-icoon op een moment of discussie om het hier te bewaren."
+        message="Tik op het bladwijzer-icoon op een moment of rode draad om het hier te bewaren."
       />
     );
   }
@@ -128,12 +128,12 @@ export function SavedItemsList() {
       )}
 
       <Text style={[styles.sectionLabel, { color: textColor }]}>
-        Opgeslagen discussies
+        Opgeslagen rode draden
       </Text>
       {savedThreads.length === 0 ? (
         <Text style={[styles.emptyText, { color: muted }]}>
-          Nog geen discussies bewaard. Tik op het bladwijzer-icoon naast een
-          discussie om het hier te zien.
+          Nog geen rode draden bewaard. Tik op het bladwijzer-icoon naast een
+          rode draad om het hier te zien.
         </Text>
       ) : (
         <View style={styles.threadList}>

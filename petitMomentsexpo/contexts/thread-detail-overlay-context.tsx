@@ -206,7 +206,7 @@ export function ThreadDetailOverlayProvider({
                 ) : !thread ? (
                   <View style={styles.stateCard}>
                     <Text style={styles.stateText}>
-                      Deze discussie is niet (meer) gevonden.
+                      Deze rode draad is niet (meer) gevonden.
                     </Text>
                   </View>
                 ) : (
@@ -365,8 +365,8 @@ export function ThreadDetailOverlayProvider({
                         accessibilityState={{ selected: saved }}
                         accessibilityLabel={
                           saved
-                            ? "Verwijder uit opgeslagen discussies"
-                            : "Bewaar deze discussie"
+                            ? "Verwijder uit opgeslagen rode draden"
+                            : "Bewaar deze rode draad"
                         }
                       >
                         {savingToggle ? (

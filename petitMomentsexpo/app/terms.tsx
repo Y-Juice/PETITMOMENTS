@@ -14,7 +14,7 @@ const SECTIONS: { title: string; body: string }[] = [
   },
   {
     title: "2. De dienst",
-    body: "Petit Moments is een digitale applicatie waarmee je onder meer foto-momenten kunt delen, bekijken en op een kaart kunt plaatsen, inclusief discussies of gelijkaardige community-functies die in de app beschikbaar zijn. Functies kunnen wijzigen, worden toegevoegd of verwijderd. De dienst wordt aangeboden “zoals ze is” (as is), zonder garantie op ononderbroken beschikbaarheid of foutloze werking.",
+    body: "Petit Moments is een digitale applicatie waarmee je onder meer foto-momenten kunt delen, bekijken en op een kaart kunt plaatsen, inclusief rode draden of gelijkaardige community-functies die in de app beschikbaar zijn. Functies kunnen wijzigen, worden toegevoegd of verwijderd. De dienst wordt aangeboden “zoals ze is” (as is), zonder garantie op ononderbroken beschikbaarheid of foutloze werking.",
   },
   {
     title: "3. Account en veiligheid",

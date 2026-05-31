@@ -17,7 +17,7 @@ export default function LibraryScreen() {
         showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: textColor }]}>Bibliotheek</Text>
         <Text style={[styles.subtitle, { color: muted }]}>
-          Alle momenten en discussies die je hebt opgeslagen.
+          Alle momenten en rode draden die je hebt opgeslagen.
         </Text>
         <SavedItemsList />
       </ScrollView>
