@@ -17,7 +17,7 @@ import {
   GradientPrimaryButton,
   PetitMomentLogoBlock,
 } from '@/components/auth/auth-screen-shared';
-import { Brand, getMomentCardColors } from '@/constants/theme';
+import { Brand, getMomentCardColors, isPaletteOnDark } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useOnboarding } from '@/contexts/onboarding-context';
 
@@ -124,12 +124,13 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
         bounces={false}
         renderItem={({ item }) => {
           const palette = getMomentCardColors(item.colorIndex);
+          const logoVariant = isPaletteOnDark(palette) ? 'colored' : 'colored-light';
           return (
             <View style={[styles.slide, { width, backgroundColor: palette.bg }]}>
               <View style={styles.slideInner}>
                 {item.showLogo ? (
                   <View style={styles.logoWrap}>
-                    <PetitMomentLogoBlock />
+                    <PetitMomentLogoBlock variant={logoVariant} />
                   </View>
                 ) : (
                   <View style={styles.iconCircle}>

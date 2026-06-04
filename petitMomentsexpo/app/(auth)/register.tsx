@@ -24,6 +24,7 @@ import {
 import { Brand } from '@/constants/theme';
 import { FontFamily } from '@/constants/typography';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 const MIN_PASSWORD = 6;
@@ -31,6 +32,7 @@ const MIN_USERNAME = 2;
 
 export default function RegisterScreen() {
   const { signUpWithEmail } = useAuth();
+  const colorScheme = useColorScheme() ?? 'light';
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const muted = useThemeColor({}, 'icon');
@@ -101,7 +103,7 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <PetitMomentLogoBlock />
+          <PetitMomentLogoBlock variant={colorScheme === 'light' ? 'light' : 'dark'} />
           <AuthWelcomeLine color={welcomeColor}>
             Welkom — log in of maak een account aan.
           </AuthWelcomeLine>

@@ -24,12 +24,14 @@ import {
 import { Brand } from "@/constants/theme";
 import { FontFamily } from "@/constants/typography";
 import { useAuth } from "@/contexts/auth-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 const MIN_PASSWORD = 6;
 
 export default function LoginScreen() {
   const { signInWithEmail } = useAuth();
+  const colorScheme = useColorScheme() ?? "light";
   const backgroundColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
   const muted = useThemeColor({}, "icon");
@@ -93,7 +95,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <PetitMomentLogoBlock />
+          <PetitMomentLogoBlock variant={colorScheme === "light" ? "light" : "dark"} />
           <AuthWelcomeLine color={welcomeColor}>
             Welkom — log in of maak een account aan.
           </AuthWelcomeLine>

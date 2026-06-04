@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import type { ReactNode } from "react";
@@ -16,21 +17,47 @@ import { FontFamily } from "@/constants/typography";
 /** Design approximation: deep orange-red → lighter orange */
 export const AUTH_GRADIENT = ["#D34735", "#F37335"] as const;
 
-type PetitMomentLogoBlockProps = {
-  /** Use light text on gradient */
+/** Which logo asset to show based on the surface behind it. */
+export type LogoBackgroundVariant =
+  | "light"
+  | "dark"
+  | "colored"
+  | "colored-light";
+
+const LOGO_SOURCES: Record<LogoBackgroundVariant, number> = {
+  light: require("@/assets/images/icon.png"),
+  dark: require("@/assets/images/iconDark.png"),
+  colored: require("@/assets/images/iconRednoBG.png"),
+  "colored-light": require("@/assets/images/iconRed.png"),
 };
 
-export function PetitMomentLogoBlock(_props: PetitMomentLogoBlockProps) {
+type PetitMomentLogoBlockProps = {
+  /**
+   * - light: white backgrounds → icon.png
+   * - dark: very dark backgrounds → iconDark.png
+   * - colored: red or dark brand-coloured backgrounds → iconRednoBG.png
+   * - colored-light: light coloured backgrounds → iconRed.png
+   */
+  variant?: LogoBackgroundVariant;
+  /** @deprecated Use `variant` instead. */
+  onWhiteBackground?: boolean;
+};
+
+export function PetitMomentLogoBlock({
+  variant,
+  onWhiteBackground,
+}: PetitMomentLogoBlockProps) {
+  const resolvedVariant: LogoBackgroundVariant =
+    variant ??
+    (onWhiteBackground === false ? "dark" : onWhiteBackground ? "light" : "light");
+
   return (
-    <LinearGradient
-      colors={[...AUTH_GRADIENT]}
-      start={{ x: 0, y: 0.5 }}
-      end={{ x: 1, y: 0.5 }}
-      style={styles.logoGradient}
-    >
-      <Text style={styles.logoLine1}>petit</Text>
-      <Text style={styles.logoLine2}>moment</Text>
-    </LinearGradient>
+    <Image
+      source={LOGO_SOURCES[resolvedVariant]}
+      style={styles.logoImage}
+      contentFit="contain"
+      accessibilityLabel="Petit Moments logo"
+    />
   );
 }
 
@@ -198,27 +225,10 @@ export function authInputStyle(
 }
 
 const styles = StyleSheet.create({
-  logoGradient: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    borderTopLeftRadius: 6,
-    borderBottomLeftRadius: 6,
-    borderTopRightRadius: 26,
-    borderBottomRightRadius: 26,
+  logoImage: {
+    width: 160,
+    height: 160,
     marginBottom: 22,
-  },
-  logoLine1: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 26,
-    color: "#FFFFFF",
-    lineHeight: 30,
-  },
-  logoLine2: {
-    fontFamily: FontFamily.titleBold,
-    fontSize: 26,
-    color: "#FFFFFF",
-    lineHeight: 30,
   },
   welcome: {
     fontFamily: FontFamily.body,
