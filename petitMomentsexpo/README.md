@@ -1,50 +1,198 @@
-# Welcome to your Expo app 👋
+# Petit Moments
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Cross-platform mobile app that connects personal stories to places on a map. Users share **moments** (a photo and short text pinned to a location) and discover what happened nearby. **Rode draden** (threads) link multiple moments into a walkable or bikeable route through a neighbourhood.
 
-## Get started
+**Baseline:** _Kleine momenten, grote verhalen._
 
-1. Install dependencies
+## Features
+
+- **Moments** — Upload a photo, write a story, and pin it to an address or map coordinate (public or private).
+- **Proximity feed** — Home screen lists nearby moments sorted by distance from the user.
+- **Map** — Browse all moments, compose routes, and follow directions to a moment or thread.
+- **Rode draden** — Select moments in order on the map to create a shared route; view numbered stops and rope-style paths.
+- **Route guidance** — Live location tracking, compass bearing, and walking/cycling routes via OpenRouteService (with straight-line fallback).
+- **Voting & saves** — Upvote/downvote moments and threads; bookmark items in the library.
+- **Authentication** — Email/password sign-up and login through Supabase Auth.
+- **Moderation** — Report content; admin dashboard to review reports and manage visibility.
+- **Onboarding** — First-run walkthrough of the app concept.
+- **Theming** — Light and dark mode with brand colours and custom typography (Fraunces, Glacial Indifference).
+
+## Tech stack
+
+| Layer         | Technology                                                                       |
+| ------------- | -------------------------------------------------------------------------------- |
+| Framework     | [Expo SDK 54](https://docs.expo.dev/) + [React Native](https://reactnative.dev/) |
+| Language      | [TypeScript](https://www.typescriptlang.org/)                                    |
+| Routing       | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based)           |
+| Backend       | [Supabase](https://supabase.com/docs) (PostgreSQL, Auth, Storage, RLS)           |
+| Maps          | [react-native-maps](https://github.com/react-native-maps/react-native-maps)      |
+| Location      | [expo-location](https://docs.expo.dev/versions/latest/sdk/location/)             |
+| Routing API   | [OpenRouteService](https://openrouteservice.org/)                                |
+| Navigation UI | [React Navigation](https://reactnavigation.org/)                                 |
+| Builds        | [EAS Build](https://docs.expo.dev/build/introduction/)                           |
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- npm
+- A [Supabase](https://supabase.com/) project with the required tables and policies
+- (Optional) [OpenRouteService API key](https://openrouteservice.org/dev/#/signup) for street-level route guidance
+- (Optional) [Google Maps API key](https://developers.google.com/maps/documentation/android-sdk/get-api-key) for maps in standalone Android builds
+- [Expo Go](https://expo.dev/go) on a device, or Android Studio / Xcode for emulators
+
+## Installation
+
+1. Clone the repository and open the project folder:
+
+   ```bash
+   git clone <repository-url>
+   cd petitMomentsexpo
+   ```
+
+2. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Create a `.env` file in the project root (see [Environment variables](#environment-variables)).
+
+4. Start the development server:
 
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+   Press `a` for Android, `i` for iOS, or `w` for web. You can also scan the QR code with Expo Go.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Environment variables
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Create `.env` in the project root. Values are loaded by `app.config.ts` and exposed to the app via `expo-constants` `extra` as a fallback for production builds.
 
-## Get a fresh project
+| Variable                              | Required | Description                                               |
+| ------------------------------------- | -------- | --------------------------------------------------------- |
+| `EXPO_PUBLIC_SUPABASE_URL`            | Yes      | Supabase project URL                                      |
+| `EXPO_PUBLIC_SUPABASE_KEY`            | Yes      | Supabase anon/public key                                  |
+| `EXPO_PUBLIC_ORS_API_KEY`             | No       | OpenRouteService API key for walking/cycling routes       |
+| `EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY` | No       | Google Maps SDK key for Android release builds            |
+| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`     | No       | Alternative env name for the Google Maps key              |
+| `EXPO_PUBLIC_ADMIN_EMAILS`            | No       | Comma-separated admin emails for the moderation dashboard |
 
-When you're ready, run:
+Example:
 
-```bash
-npm run reset-project
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
+EXPO_PUBLIC_ORS_API_KEY=your-ors-key
+EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY=your-google-maps-key
+EXPO_PUBLIC_ADMIN_EMAILS=admin@example.com
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Do not commit `.env` or other files containing secrets.
 
-## Learn more
+After changing environment variables, restart the Expo dev server.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Scripts
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Command           | Description                        |
+| ----------------- | ---------------------------------- |
+| `npm start`       | Start the Expo development server  |
+| `npm run android` | Start Expo and open on Android     |
+| `npm run ios`     | Start Expo and open on iOS         |
+| `npm run web`     | Start Expo and open in the browser |
+| `npm run lint`    | Run ESLint                         |
 
-## Join the community
+## Building for Android (APK)
 
-Join our community of developers creating universal apps.
+This project uses [EAS Build](https://docs.expo.dev/build/setup/). The `preview` profile in `eas.json` produces an installable APK.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Install the EAS CLI and log in:
+
+   ```bash
+   npm install -g eas-cli
+   eas login
+   ```
+
+2. Run a preview build:
+
+   ```bash
+   eas build -p android --profile preview
+   ```
+
+3. Download the APK from the build page on [expo.dev](https://expo.dev) when the build completes.
+
+For production releases, use the `production` profile. See the [EAS Build documentation](https://docs.expo.dev/build/introduction/) for details.
+
+## Project structure
+
+```
+petitMomentsexpo/
+├── app/                    # Expo Router screens and layouts
+│   ├── (auth)/             # Login and registration
+│   ├── (tabs)/             # Main tab navigation (Home, Map, Add, Library, Profile)
+│   ├── admin/              # Moderation dashboard
+│   └── onboarding.tsx      # First-run onboarding
+├── components/             # Reusable UI components
+├── contexts/               # React context providers (auth, moments, votes, …)
+├── constants/              # Theme, typography, colours
+├── data/                   # Shared types and static data
+├── hooks/                  # Custom React hooks
+├── utils/                  # Supabase clients, routing, geo helpers
+├── assets/images/          # App icons (icon, iconDark, iconRed, iconRednoBG, …)
+├── stubs/                  # Web stubs for react-native-maps
+├── app.config.ts           # Dynamic Expo config and env loading
+├── app.json                # Static Expo config
+└── eas.json                # EAS Build profiles
+```
+
+Platform-specific screens use Expo’s convention: `.native.tsx` for iOS/Android and `.web.tsx` for web (for example `add.native.tsx` and `map.native.tsx`).
+
+## Supabase
+
+The app expects Supabase tables including (among others):
+
+- `profiles`
+- `moments`
+- `threads` and `thread_moments`
+- `votes`
+- `saves`
+- `reports`
+
+Row Level Security (RLS) policies must allow authenticated users to read public content and manage their own data. See the [Supabase JavaScript client documentation](https://supabase.com/docs/reference/javascript/introduction) and [Auth guides](https://supabase.com/docs/guides/auth).
+
+## Maps on web vs native
+
+On native platforms, maps use `react-native-maps`. On web, Metro resolves map imports to lightweight stubs in `stubs/` so the app can run without native map modules. Full map functionality is intended for iOS and Android.
+
+## Linting
+
+The project uses [ESLint](https://eslint.org/) with [`eslint-config-expo`](https://www.npmjs.com/package/eslint-config-expo):
+
+```bash
+npm run lint
+```
+
+## Sources and documentation
+
+Technologies and APIs used in this project:
+
+- **Expo** — [Documentation](https://docs.expo.dev/)
+- **Expo Router** — [File-based routing](https://docs.expo.dev/router/introduction/)
+- **React** — [react.dev](https://react.dev/)
+- **React Native** — [reactnative.dev](https://reactnative.dev/)
+- **TypeScript** — [typescriptlang.org](https://www.typescriptlang.org/docs/)
+- **Supabase** — [JavaScript client](https://supabase.com/docs/reference/javascript/introduction), [Auth](https://supabase.com/docs/guides/auth), [Storage](https://supabase.com/docs/guides/storage)
+- **react-native-maps** — [GitHub repository](https://github.com/react-native-maps/react-native-maps)
+- **expo-location** — [SDK reference](https://docs.expo.dev/versions/latest/sdk/location/)
+- **expo-image-picker** — [SDK reference](https://docs.expo.dev/versions/latest/sdk/imagepicker/)
+- **expo-image** — [SDK reference](https://docs.expo.dev/versions/latest/sdk/image/)
+- **OpenRouteService** — [API documentation](https://openrouteservice.org/dev/#/api-docs)
+- **Google Maps Platform** — [Maps SDK for Android](https://developers.google.com/maps/documentation/android-sdk/overview)
+- **React Navigation** — [Documentation](https://reactnavigation.org/docs/getting-started/)
+- **Async Storage** — [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/docs/install/)
+- **EAS Build** — [Expo Application Services](https://docs.expo.dev/build/introduction/)
+- **Expo Fonts / Google Fonts** — [@expo-google-fonts/fraunces](https://www.npmjs.com/package/@expo-google-fonts/fraunces)
+
+## License
+
+Private project — all rights reserved unless stated otherwise.
