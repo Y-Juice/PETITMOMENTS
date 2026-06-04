@@ -8,7 +8,16 @@ require("dotenv").config({
   override: true,
 });
 
+type AppExtra = {
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+  adminEmails?: string;
+  orsApiKey?: string;
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => {
+  const extra = (config.extra ?? {}) as AppExtra;
+
   const googleMapsKey =
     process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY ??
     process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -16,11 +25,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const merged = {
     ...config,
     extra: {
-      ...(config.extra ?? {}),
-      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_KEY,
-      adminEmails: process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? "",
-      orsApiKey: process.env.EXPO_PUBLIC_ORS_API_KEY ?? "",
+      ...extra,
+      supabaseUrl:
+        process.env.EXPO_PUBLIC_SUPABASE_URL ?? extra.supabaseUrl ?? "",
+      supabaseAnonKey:
+        process.env.EXPO_PUBLIC_SUPABASE_KEY ?? extra.supabaseAnonKey ?? "",
+      adminEmails:
+        process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? extra.adminEmails ?? "",
+      orsApiKey:
+        process.env.EXPO_PUBLIC_ORS_API_KEY ?? extra.orsApiKey ?? "",
     },
   };
 

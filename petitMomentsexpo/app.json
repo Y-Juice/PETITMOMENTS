@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.ytazi.petitmomentsexpo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +44,16 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "supabaseUrl": "https://hrsuslrxjolahfbjbdxu.supabase.co",
+      "supabaseAnonKey": "sb_publishable_X17F0n13gCvA5j30S7vu-g_lpMMghSS",
+      "adminEmails": "",
+      "orsApiKey": "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjY2ZTQ3Mjk3YmY1ZjRiZDVhNTE0NTE2MTM1MWJhOWQxIiwiaCI6Im11cm11cjY0In0=",
+      "router": {},
+      "eas": {
+        "projectId": "233f775a-7838-4b98-b92e-21771ec240a8"
+      }
     }
   }
 }
