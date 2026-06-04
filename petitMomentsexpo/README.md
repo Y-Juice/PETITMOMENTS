@@ -192,6 +192,7 @@ Technologies and APIs used in this project:
 - **Async Storage** — [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/docs/install/)
 - **EAS Build** — [Expo Application Services](https://docs.expo.dev/build/introduction/)
 - **Expo Fonts / Google Fonts** — [@expo-google-fonts/fraunces](https://www.npmjs.com/package/@expo-google-fonts/fraunces)
+- **OpenAI.** (2026, 5 juni). _ChatGPT-conversatie over Expo en Supabase integratie_ (Versie ChatGPT-4o) [Chatlog]. Geraadpleegd in april - juni 2026, van https://chatgpt.com/share/6a2205cc-3a2c-8325-9f84-bd946b9be0b0
 
 ## License
 
